@@ -4,33 +4,69 @@
 # whisper.transcibe() : .wav -> 텍스트 변환 핵심 함수
 
 from fastapi import FastAPI, WebSocket
+# FastAPI - 서버 전체를 만드는 핵심 클래스
+# WebSocket - 실시간 데이터 송수신용 통신 방식 객체 (질문-응답 주고받기용)
+# 이 두개가 API 서버 + 실시간 연걸의 기둥
+
 from fastapi.responses import HTMLResponse
+# 서버에서 HTML 코드 자체를 반환할 수 있게 해주는 객체
+# (즉, .html 파일 없이도 파이썬 코드 안에서 UI까지 포함하는 구조 만들 수 있음)
+
 import whisper
+# whisper.load_model()로 모델 불러오고
+# model.transcribe()로 음성 -> 텍스트 변환
+# 주의 : pip install git+https://github.com/openal/whisper.git 해야함
+
 import os
+# 파일 저장, 삭제 등 파일 시스템 조작용
+# 오디오 파일 .wav 저장하고
+# 사용 후 os.remove()로 삭제할 때 사용
 
 app = FastAPI()
+# FastAPI 앱을 생성하는 핵심 선언문
+# -> 모든 라우팅, WebSocket, 서버 설정은 이 객체를 통해 연결됨
+# @app.get("/") ~~ 여기가 API 경로 지정하는 부분
 
 # Whisper base 모델 로드 (GPU 사용)
 model = whisper.load_model("base", device="cuda:0")
+# Whisper STT 모델을 불러오고 GPU에 올리는 과정
+# whisper.load_model() : Whisper 모델을 메모리에 불러옴 (OpenAI가 만든 음성 인식 모델)
+# base : 사용할 모델의 사이즈 지정 -> 작은 모델 부터 'tiny', 'base', 'small', 'medium', 'large'
+# device=cuda:0 : GPU 0번 디바이스에 올려서 속도 빠르게 하기
+
+## 코드 실행되면 'model'객체는 이렇게 쓰임 !
+# result = model.transcribe("temp_question_1.wav", language="ko")
+# transcript = result["text"].strip()
+# -> .wav 파일 하나 -> 텍스트 결과 뽑아냄
+
 
 # ADHD 간이 문항 (2개)
 QUESTIONS = [
     "당신은 주의가 산만하다는 말을 자주 듣습니까?",
     "가만히 앉아 있는 것이 어렵다고 느끼나요?"
-]
+] # 리스트 형태로 저장한 질문 리스트, 아래 for i, question in enumerate(QUESTIONS): 반복문에서 쓰임
+'''QUESTIONS = [
+    {"id": 1, "text": "주의가 산만하다는 말을 자주 듣습니까?"},
+    {"id": 2, "text": "가만히 앉아 있는 것이 어렵다고 느끼나요?"},
+    ...
+]'''
 
-@app.get("/")
-def home():
-    return HTMLResponse("""
-    <html>
-    <head>
-      <title>ADHD 음성 진단</title>
+@app.get("/")   # FaskAPI의 라우터 데코레이터
+# 의미 : 브라우저에서 http://localhost:5981/로 접속했을 때 실행할 함수 정의
+
+def home(): # 위에서 지정한 경로 /로 들어오면 실행될 함수 이름
+    return HTMLResponse("""   # 함수 실행 시 HTML 코드 문자열을 응답으로 돌려줌
+                              # 즉 이 서버는 브라우저에 접속하면 HTML 페이지 전체를 바로 던져줌
+                              # 내부에 JS, CSS, WebSocket 코드 다 들어있음. 올인원 HTML 문자열 구조
+    <html>    # html 코드 시작, 늘 <html>로 시작해서 </html>로 끝나야함 그 안에 순서는 아래 처럼
+    <head>    # 머리
+      <title>ADHD 음성 진단</title>   # 타이틀
     </head>
-    <body>
-      <h2><b>ADHD</b> 음성 진단 테스트 (2문항)</h2>
-      <button onclick="startWebSocket()">진단 시작</button>
-      <div id="messages"></div>
-      <div id="status" style="margin-top: 10px; font-weight: bold; color: darkred;"></div>
+    <body>    # 몸통
+      <h2><b>ADHD</b> 음성 진단 테스트 (2문항)</h2>   # h2로 큰 제목으로 표시하시오
+      <button onclick="startWebSocket()">진단 시작</button>   # button 생성 안에 내용은 진단 시작인데 거기에 startWebSocket 포함시킴
+      <div id="messages"></div>   # 질문과 응답 출력
+      <div id="status" style="margin-top: 10px; font-weight: bold; color: darkred;"></div>  # 현재 상태 메세지는 이런식으로 나온다~ 는 것
 
       <script>
         let socket;
@@ -40,6 +76,10 @@ def home():
         function startWebSocket() {
           const host = window.location.host;
           socket = new WebSocket(`ws://${host}/ws/adhd-short`);
+          # 이게 핵심 코드 /ws/adhd-short 경로로 WebSocket 연결 시작 !
+          # 연결되면 FastAPI 서버의 @app.websocket("/ws/adhd-short") 함수가 호출됨
+          # WebSocket이 연결되면 밑에 @app.websocket 함수 실행됨
+          # await websocket.accept() 핸드셰이크 수락
         
           socket.onmessage = async function(event) {
             const msg = event.data;

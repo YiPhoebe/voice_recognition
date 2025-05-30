@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>ADHD 음성 진단 시스템</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+
+</head>
+<body>
+  <h1>ADHD 음성 진단 시스템</h1>
+
+  <div class="button-group">
+    <button id="start-btn" onclick="startDiagnosis()">테스트 시작</button>
+    <button onclick="pauseAudio()">일시정지</button>
+    <button onclick="resumeAudio()">이어 듣기</button>
+    <button onclick="replayAudio()">다시 듣기</button>
+    <button onclick="skipQuestion()">건너뛰기</button>
+    <button onclick="restartDiagnosis()">처음부터 다시</button>
+  </div>
+
+  <!-- 질문 영역 -->
+  <div id="question">문제는 음성으로 나오니 이어폰을 착용해 주시거나 볼륨을 올려주세요.</div><br>
+
+  <!-- 음성 상태 메시지 -->
+  <div id="response">답변 듣는 중:</div>
+
+  <!-- 음성 결과 텍스트 -->
+  <div id="responseText">여기 인식된 음성이 나옵니다.</div>
+
+  <!-- 점수 체크박스 -->
+  <div class="checkbox-group">
+    <label><input type="checkbox" id="checkbox-1"> ① 전혀 그렇지 않다</label>
+    <label><input type="checkbox" id="checkbox-2"> ② 약간 그렇다</label>
+    <label><input type="checkbox" id="checkbox-3"> ③ 꽤 그렇다</label>
+    <label><input type="checkbox" id="checkbox-4"> ④ 아주 많이 그렇다</label>
+  </div>
+
+  <script src="/static/js/diagnosis.js"></script>
+</body>
+</html>
