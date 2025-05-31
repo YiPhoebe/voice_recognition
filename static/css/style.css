@@ -1,172 +1,282 @@
 /* =============================
-   ✅ 기본 페이지 스타일 설정
+   ✅ 전체 공통 스타일 (폰트 기본값)
+============================= */
+html, body, * {
+  font-family: 'pretendard', sans-serif !important;  /* 전체 폰트를 pretendard로 설정 */
+}
+
+
+/* =============================
+   ✅ wrap 기준: 입력 폼 페이지 스타일
 ============================= */
 body {
-  font-family: 'Roboto', sans-serif;        /* 전체 폰트 Roboto */
-  background-color: #ffffff;                /* 흰 배경 */
-  margin: 0;                                 /* 기본 여백 제거 */
-  padding: 110px 20px;                        /* 상단 여백과 양옆 여백 */
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;                         /* 최소 높이 */
-  box-sizing: border-box;
+  font-family: 'pretendard', sans-serif;             /* 본문 기본 폰트 */
+  background-color: #ffffff;                     /* 전체 배경 흰색 */
+  margin: 0;                                     /* 여백 제거 */
+  padding: 0;                                    /* 패딩 제거 */
+  display: flex;                                 /* Flexbox 레이아웃 */
+  justify-content: center;                       /* 가로 중앙 정렬 */
+  flex-direction: column;                        /* 세로 방향 정렬 */
+  align-items: center;                           /* 세로 중앙 정렬 */
+  min-height: 100vh;                             /* 화면 높이 꽉 채움 */
+  box-sizing: border-box;                        /* padding 포함한 사이즈 계산 */
 }
 
-/* =============================
-   ✅ 전체 폼 감싸는 컨테이너
-============================= */
 .wrap {
-  width: 100%;
-  max-width: 360px;                          /* 모바일 기준 너비 */
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;                      /* 내부 요소 꽉 차게 */
+  width: 100%;                     /* 부모(body)의 전체 너비를 사용 */
+  max-width: 360px;                /* 기본 최대 너비를 360px로 제한 (모바일 기준) */
+  padding: 20px;                   /* 모든 방향에 20px 여백 */
+  display: flex;                   /* Flexbox 레이아웃 적용 */
+  flex-direction: column;         /* 자식 요소들을 위에서 아래 방향으로 정렬 */
+  align-items: stretch;           /* 내부 요소들을 너비 100%로 늘리기 */
 }
 
-/* =============================
-   ✅ 제목 영역 (H1 / H2)
-============================= */
+/* ✅ 반응형: 태블릿 이상일 때 여유 있게 */
+@media (min-width: 481px) {
+  .wrap {
+    max-width: 480px;              /* 더 넓은 너비로 확장 (태블릿 대응) */
+    padding: 40px;                 /* 여백도 넓게 적용 */
+  }
+}
+
+@media (min-width: 768px) {
+  .wrap {
+    max-width: 380px;              /* 다시 살짝 좁혀서 너무 넓어지는 것 방지 (디자인 안정성) */
+    padding: 40px;                 /* 여백 유지 */
+  }
+
+  .title-main,
+  .title-sub {
+    font-size: 36px;               /* 타이틀 텍스트 크기 크게 (PC는 여유 있음) */
+  }
+
+  .button {
+    font-size: 28px;               /* 버튼 텍스트도 키움 */
+  }
+}
+
 .title-main {
-  font-size: 32px;
-  font-weight: bold;
-  margin: 0;
-  text-align: center;
+  font-size: 32px;                 /* 기본 타이틀 텍스트 크기 */
+  font-weight: bold;              /* 글자를 굵게 */
+  margin: 0;                      /* 기본 마진 제거 */
+  text-align: center;            /* 텍스트 가운데 정렬 */
 }
 
 .title-sub {
-  font-size: 32px;
-  font-weight: bold;
-  margin: 4px 0 32px;
-  text-align: center;
+  font-size: 32px;                 /* 서브 타이틀도 동일한 크기 */
+  font-weight: bold;              /* 굵게 표시 */
+  margin: 4px 0 32px;             /* 위 4px, 아래 32px 마진 (간격 조정) */
+  text-align: center;             /* 가운데 정렬 */
 }
 
-/* =============================
-   ✅ 폼 블럭 공통 스타일
-============================= */
 .form-section {
-  margin-bottom: 40px;                      /* 아래 여백 */
-  width: 100%;
+  margin-bottom: 40px;           /* 아래쪽에 40px 간격을 둠 (다음 항목과 여백) */
+  width: 100%;                   /* 가로 너비를 전체로 설정 */
 }
 
 .form-section label {
-  display: inline-block;
-  font-weight: bold;
-  margin-bottom: 6px;
-  color: #333;
+  display: inline-block;         /* 줄바꿈 가능한 인라인 블록 요소로 설정 */
+  font-weight: bold;             /* 굵은 글씨 */
+  margin-bottom: 6px;            /* 입력창과 간격 확보 */
+  color: #333;                   /* 텍스트 색상: 진한 회색 */
 }
 
-/* =============================
-   ✅ 아이콘이 있는 입력 필드
-============================= */
 .input-icon {
-  position: relative;
+  position: relative;            /* 내부 아이콘을 절대 위치로 배치하기 위해 relative 설정 */
 }
 
 .input-icon img {
-  position: absolute;
-  top: 50%;
-  left: 12px;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
-  opacity: 0.6;
+  position: absolute;            /* 부모(input-icon)에 상대적인 절대 위치 */
+  top: 50%;                      /* 수직 중앙 기준 위치 */
+  left: 12px;                    /* 왼쪽에서 12px 떨어진 위치에 고정 */
+  transform: translateY(-50%);   /* 정확한 수직 중앙 정렬 보정 */
+  width: 16px;                   /* 아이콘 너비 */
+  height: 16px;                  /* 아이콘 높이 */
+  opacity: 0.6;                  /* 약간 투명하게 (시각적 부드러움) */
 }
 
 .input-icon input {
-  width: 100%;
-  padding: 10px 12px 10px 36px;             /* 왼쪽 여백은 아이콘 자리 */
-  border: none;
-  border-radius: 8px;
-  background-color: #f2f2f2;
-  font-size: 14px;
-  box-sizing: border-box;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  width: 100%;                   /* 입력창을 가로로 꽉 채움 */
+  padding: 10px 12px 10px 36px;  /* 좌측은 아이콘 공간 36px 확보, 상하좌우 패딩 설정 */
+  border: none;                  /* 테두리 없음 */
+  border-radius: 8px;            /* 모서리를 둥글게 처리 */
+  background-color: #f2f2f2;     /* 밝은 회색 배경 */
+  font-size: 14px;               /* 글자 크기 */
+  box-sizing: border-box;        /* 패딩과 border 포함한 크기 계산 */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 가벼운 그림자 효과 */
 }
 
-/* =============================
-   ✅ 이름/성별, 연/월/일 정렬
-============================= */
 .form-row {
-  display: flex;
-  gap: 16px;                                 /* 각 요소 사이 여백 */
-  justify-content: space-between;
-  align-items: flex-start;
+  display: flex;                 /* 수평 정렬을 위한 Flexbox 적용 */
+  gap: 16px;                     /* 자식 요소 간의 가로 간격 */
+  justify-content: space-between; /* 남은 공간을 양쪽에 골고루 배치 */
+  align-items: flex-start;       /* 수직 정렬: 위쪽 기준 정렬 */
 }
 
 .input-group {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  flex: 1;                          /* 남은 공간을 균등하게 차지함 */
+  display: flex;                    /* 내부 요소 정렬을 위한 flex */
+  flex-direction: column;          /* 세로 방향 정렬 (label + input) */
 }
 
 .input-group input,
 .input-group select {
-  height: 40px;
-  padding: 0 12px;
-  font-size: 14px;
-  border: none;
-  border-radius: 8px;
-  background-color: #f2f2f2;
-  box-sizing: border-box;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  height: 40px;                    /* 입력창 높이 */
+  padding: 0 12px;                 /* 좌우 패딩 */
+  font-size: 14px;                 /* 글자 크기 */
+  border: none;                    /* 테두리 제거 */
+  border-radius: 8px;              /* 둥근 모서리 */
+  background-color: #f2f2f2;       /* 배경색: 밝은 회색 */
+  box-sizing: border-box;          /* 패딩 포함한 크기 계산 */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 가벼운 그림자 */
 }
 
 .birth-input-group {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  margin-bottom: 24px;
-  margin-left: 13px;
+  display: flex;                   /* 년/월/일 수평 정렬 */
+  gap: 16px;                       /* 입력칸 간 간격 */
+  justify-content: center;        /* 가운데 정렬 */
+  margin-bottom: 24px;            /* 하단 여백 */
+  margin-left: 13px;              /* 약간 왼쪽 밀기 (맞춤용) */
 }
 
 .input-inline {
-  display: flex;
-  align-items: center;  /* 세로 가운데 정렬 */
-  gap: 6px;             /* input과 텍스트(년/월/일) 사이 간격 */
+  display: flex;                   /* 내부 요소(입력 + span) 가로 정렬 */
+  align-items: center;            /* 수직 가운데 정렬 */
+  gap: 6px;                        /* 입력칸과 '년/월/일' 간 간격 */
 }
 
-/* input 개별 width 지정 */
-.input-inline:nth-child(1) input { width: 80px; }  /* 년 */
-.input-inline:nth-child(2) input { width: 50px; }  /* 월 */
-.input-inline:nth-child(3) input { width: 50px; }  /* 일 */
+.input-inline:nth-child(1) input { width: 90px; }  /* 년도 칸 */
+.input-inline:nth-child(2) input { width: 56px; }  /* 월 칸 */
+.input-inline:nth-child(3) input { width: 56px; }  /* 일 칸 */
 
 .input-inline input {
-  height: 40px;
-  border: none;
-  border-radius: 6px;
-  background-color: #f2f2f2;
-  padding: 0 12px;
-  font-size: 14px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  height: 40px;                   /* 높이 고정 */
+  border: none;                   /* 테두리 없음 */
+  border-radius: 6px;             /* 약간 둥근 모서리 */
+  background-color: #f2f2f2;      /* 밝은 회색 배경 */
+  padding: 0 12px;                /* 좌우 패딩 */
+  font-size: 14px;                /* 글자 크기 */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* 더 부드러운 그림자 */
 }
 
 .input-inline span {
-  font-weight: bold;      /* ✅ 생년월일 라벨과 통일 */
-  font-size: 14px;        /* ✅ 인풋과 어울리게 */
-  color: #333;            /* ✅ form-section 라벨과 동일한 색상 */
-  min-width: 24px;        /* ✅ 간격 맞추기 (선택) */
+  font-weight: bold;              /* 굵게 */
+  font-size: 14px;                /* 입력칸과 통일된 크기 */
+  color: #333;                    /* 진회색 */
+  min-width: 24px;                /* 간격 유지를 위한 최소 너비 */
 }
 
-/* =============================
-   ✅ 버튼 스타일
-============================= */
+.gender-select {
+  color: #333;                    /* 일반 항목 색상 */
+}
+
+.gender-select option[value=""] {
+  color: #aaa;                                    /* placeholder는 연하게 */
+}
+
 .button {
-  background-color: #5d8695;
-  color: white;
-  border: none;
-  width: fit-content !important;  /* 내부 콘텐츠에 맞게 */
-  padding: 12px 18px;
-  font-weight: bold;
-  font-size: 25px;
-  border-radius: 6px;
-  cursor: pointer;
+  background-color: #5d8695;      /* 버튼 배경색 (청록계열) */
+  color: white;                   /* 글자색 흰색 */
+  border: none;                   /* 테두리 없음 */
+  width: fit-content !important;  /* 내용에 맞게 자동 너비 설정 */
+  padding: 12px 18px;             /* 상하/좌우 여백 */
+  font-weight: bold;              /* 글자 굵게 */
+  font-size: 25px;                /* 버튼 내 글자 크기 */
+  border-radius: 6px;             /* 둥근 모서리 */
+  cursor: popretendard;                /* 커서를 손모양으로 변경 */
   margin-top: 0px;
-  margin: 0 auto;
-  box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
+  display: block;
+  margin: 0 auto;                 /* 가운데 정렬 */
+  box-shadow: 0px 2px 6px rgba(0,0,0,0.2); /* 그림자 효과 */
 }
 
 .button:hover {
-  background-color: #466b78;                /* 호버 시 진해짐 */
+  background-color: #466b78;                     /* 호버 시 색 진해짐 */
 }
 
+/******************************
+  📌 STEP 2: 안내 화면 스타일 (wrap 밖)
+******************************/
+#intro-step {
+  height: 400vh;
+  display: none;
+  top: 0; left: 0;
+  flex-direction: column;
+  background-color: white;
+  align-items: center;
+  z-index: 999;
+  padding: 2rem;
+  box-sizing: border-box;
+  text-align: center;
+  width: 100vw;  
+  margin-top: 100px;
+}
+
+/* 🎧 아이콘 */
+.intro-icon {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 24px;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+
+.intro-icon.fade-text-fixed {
+  opacity: 1;
+}
+
+/* 💬 안내 문구 */
+.guide-container {
+  min-height: 150px; /* 적절한 높이 주기 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* gap: 12px; */
+  text-align: center;
+}
+
+.guide-line {
+  display: block;
+  font-size: 22px;
+  font-weight: 600;
+  color: #333;
+  opacity: 0;
+  visibility: hidden;
+  text-align: center;
+  margin: 0.5rem 0;
+  /* line-height: 1.6; */
+  transition: opacity 1s ease-in-out;
+}
+
+.guide-line.fade-text-fixed {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* 🖱️ 클릭 유도 */
+#click-to-continue {
+  margin-top: 100px;
+  font-size: 16px;
+  color: gray;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 1s ease-in-out, visibility 1s ease-in-out;
+}
+
+#click-to-continue.fade-text-fixed {
+  opacity: 1;
+  visibility: visible;
+}
+
+.hidden {                           /* 완전히 안 보이게 숨김 처리 (display + visibility + opacity 전부) */
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+.fade-text-fixed {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transition: opacity 1s ease-in-out;
+  position: relative; /* ✅ 요거 추가! */
+}
