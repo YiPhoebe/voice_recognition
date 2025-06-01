@@ -12,6 +12,10 @@ import shutil
 import json
 import asyncio
 
+from pydantic import BaseModel
+import csv
+from datetime import datetime
+
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -19,6 +23,42 @@ templates = Jinja2Templates(directory="tem")
 
 with open("static/questions_list.json", "r", encoding="utf-8") as f:
     QUESTIONS = json.load(f)
+
+class UserInfo(BaseModel):
+    name: str
+    email: str
+    gender: str
+    birth: str
+
+@app.post("/save-user")
+async def save_user(request: Request):
+    user_info = await request.json()
+
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # ✅ 파일 존재 여부 확인 후 헤더 설정
+    file_exists = os.path.isfile("user_data.csv")
+    with open("user_data.csv", mode="a", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        if not file_exists:
+            writer.writerow(["id", "email", "name", "gender", "birth", "timestamp"])
+
+        # ✅ 고유 id는 기존 라인 수 기준 +1
+        with open("user_data.csv", "r", encoding="utf-8") as f:
+            line_count = sum(1 for row in f)
+
+        user_id = line_count  # header 제외하고 1부터 시작하려면 -1
+
+        writer.writerow([
+            user_id,
+            user_info.get("email", ""),
+            user_info.get("name", ""),
+            user_info.get("gender", ""),
+            user_info.get("birth", ""),
+            now
+        ])
+
+    return {"message": "사용자 정보 저장 완료"}
 
 @app.get("/", response_class=HTMLResponse)
 async def get_home(request: Request):
@@ -132,3 +172,4 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         print("❗ 예외 발생:", e)
         await websocket.close()
+

@@ -1,5 +1,33 @@
 // diagnosis.js
-const audio = new Audio();
+
+let audio;
+audio = new Audio();
+let introAudio = null;
+let introAudio2 = null;
+
+// 사용자 정보 저장용 변수
+let userInfo = {
+  name: "",
+  email: "",
+  gender: "",
+  birth: ""
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("🎯 DOMContentLoaded 실행됨");
+  introAudio = document.getElementById("introAudio");
+  introAudio2 = document.getElementById("introAudio2");
+
+  console.log("🎯 DOM 로드됨. introAudio:", introAudio);
+  console.log("🎯 DOM 로드됨. introAudio2:", introAudio2);
+
+  if (!introAudio) {
+    console.warn("⚠️ introAudio 요소를 찾을 수 없습니다.");
+  }
+  if (!introAudio2) {
+    console.warn("⚠️ introAudio2 요소를 찾을 수 없습니다.");
+  }
+});
 
 let socket;
 let currentQuestionIndex = 0;
@@ -9,19 +37,58 @@ let audioChunks = [];
 let isRecording = false;
 let isPaused = false;
 
-
 function startDiagnosis() {
+  const nameInput = document.getElementById("name");
+  const emailInput = document.getElementById("email");
+  const genderInput = document.getElementById("gender");
+  const yearInput = document.getElementById("year");
+  const monthInput = document.getElementById("month");
+  const dayInput = document.getElementById("day");
+
+  if (!nameInput || !emailInput || !genderInput || !yearInput || !monthInput || !dayInput) {
+    alert("입력 폼 요소를 찾을 수 없습니다. 페이지를 새로고침해주세요.");
+    return;
+  }
+
+  // 입력 값 가져오기
+  const name = nameInput.value.trim();
+  const email = emailInput.value.trim();
+  const gender = genderInput.value;
+  const year = yearInput.value.trim();
+  const month = monthInput.value.trim();
+  const day = dayInput.value.trim();
+  const birth = `${year}-${month}-${day}`;
+
+  // 유효성 검사
+  if (!name || !email || !gender || !year || !month || !day) {
+    alert("모든 정보를 입력해주세요.");
+    return;
+  }
+
+  // 사용자 정보 저장
+  userInfo = { name, email, gender, birth };
+  console.log("✅ 사용자 정보 저장됨:", userInfo);
+
+  fetch('/save-user', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(userInfo)
+  })
+  .then(response => {
+    if (!response.ok) throw new Error("서버 저장 실패");
+    console.log("✅ 사용자 정보가 서버에 저장되었습니다.");
+  })
+  .catch(err => {
+    console.error("❌ 사용자 정보 저장 실패:", err);
+  });
+
   document.getElementById("input-form").classList.add("hidden");
   document.getElementById("intro-step").classList.remove("hidden");
 
-  showIntroStep();
-
-  // 4초 후 회색 문구 표시
-  setTimeout(() => {
-    document.getElementById("click-to-continue").classList.remove("hidden");
-  }, 2000);
+  showIntroStep(); // ✅ 오디오 + 디졸브 + 클릭 이벤트 포함
 }
-
 
 function startWebSocket() {
   const host = window.location.host;
@@ -45,197 +112,62 @@ function startWebSocket() {
   };
 }
 
-function updateQuestionUI(text) {
-  const lowerText = text.toLowerCase();
-  document.getElementById("question").innerText = lowerText;
-  document.getElementById("response").innerText = "답변 듣는 중:";
-  document.getElementById("responseText").innerText = "";
-  document.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = false);
-}
-
-function updateResponseUI(text) {
-  const knownBotResponses = [
-    "인식된 내용이 없습니다.",
-    "3회 동안 응답이 없어 진단을 종료합니다.",
-    "모든 질문이 완료되었습니다. 수고하셨습니다!"
-  ];
-
-  if (knownBotResponses.includes(text.trim())) {
-    document.getElementById("responseText").innerText = "🗣️ " + text;
-    return;
-  }
-
-  const scoreMap = [
-    [4, ["4", "사", "아주 많이", "4점", "4번", "4전", "사전"]],
-    [3, ["3", "삼", "꽤", "3점", "3번", "3전", "삼전"]],
-    [2, ["2", "이", "약간", "2점", "2번", "2전", "이전"]],
-    [1, ["1", "일", "전혀 그렇", "1점", "1번", "1전", "일전"]],
-  ];
-
-  const lowerText = text.toLowerCase();
-  let foundScore = null;
-  for (const [score, phrases] of scoreMap) {
-    if (phrases.some(p => lowerText.includes(p))) {
-      foundScore = score;
-      break;
-    }
-  }
-
-  if (foundScore) {
-    const checkbox = document.getElementById(`checkbox-${foundScore}`);
-    if (checkbox) checkbox.checked = true;
-  }
-
-  document.getElementById("responseText").innerText = "🗣️ " + text;
-}
-
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function showListening() {
-  document.getElementById("response").innerText = "답변 듣는 중:";
-}
-
-
-function playAudio(url) {
-  audio.pause();
-  audio.currentTime = 0;
-  audio.src = url;
-  audio.load();
-  audio.play().catch(error => console.warn("🔇 오디오 재생 실패:", error));
-  audio.onended = () => {
-    showListening();
-    startRecording();
-  };
-}
-
-async function startRecording() {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  mediaRecorder = new MediaRecorder(stream);
-  audioChunks = [];
-
-  isRecording = true;
-  isPaused = false;
-
-  mediaRecorder.ondataavailable = e => {
-    audioChunks.push(e.data);
-  };
-
-  mediaRecorder.onstop = () => {
-    isRecording = false;
-    isPaused = false;
-    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-    socket.send(audioBlob);
-  };
-
-  mediaRecorder.onerror = e => console.error("❌ MediaRecorder 오류 발생:", e);
-
-  mediaRecorder.start();
-  setTimeout(() => {
-    if (mediaRecorder && mediaRecorder.state === "recording") {
-      mediaRecorder.stop();
-    }
-  }, 3000);
-}
-
-  mediaRecorder.onstop = () => {
-    isRecording = false;
-    isPaused = false;
-    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-    console.log("🎙️ 녹음 완료 → 서버 전송");
-    socket.send(audioBlob);
-  };
-
-  mediaRecorder.start();
-  isRecording = true;
-  isPaused = false;
-
-  console.log("🎙️ 녹음 시작");
-
-function pauseAudio() {
-  audio.pause();  // 오디오도 같이 멈추자!
-
-  if (isRecording && !isPaused) {
-    mediaRecorder.pause();
-    isPaused = true;
-    console.log("⏸️ 녹음 일시정지 + 오디오 정지");
-  } else if (isRecording && isPaused) {
-    console.log("⏸️ 이미 녹음이 일시정지 상태야");
-  } else if (!isRecording) {
-    console.log("⏸️ 녹음이 진행 중이 아냐 (오디오는 정지함)");
-  }
-}
-
-function resumeAudio() {
-  if (audio.paused) {
-    audio.play();
-    console.log("▶️ 오디오 이어듣기");
-
-    if (isRecording && isPaused && mediaRecorder && mediaRecorder.state === "paused") {
-      mediaRecorder.resume();
-      isPaused = false;
-      console.log("▶️ 녹음도 이어서 재개");
-    }
-  }
-}
-
-function replayAudio() {
-  audio.pause();
-  audio.currentTime = 0;
-  audio.play();
-  audio.onended = () => {
-    console.log("🎤 오디오 재생 완료 → 녹음 시작");
-    startRecording();
-  };
-}
-
-function skipQuestion() {
-  audio.pause();
-  audio.currentTime = 0;
-  if (audio.onended) audio.onended();
-  socket.send("SKIP");
-}
-
-function restartDiagnosis() {
-  audio.pause();
-  audio.currentTime = 0;
-  if (socket) socket.close();
-  updateQuestionUI("테스트를 다시 시작합니다.");
-  document.getElementById("responseText").innerText = "";
-  document.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = false);
-  currentQuestionIndex = 0;
-  retryCount = 0;
-  setTimeout(() => {
-    startWebSocket();
-    setTimeout(() => socket.send("RESTART"), 300);
-  }, 300);
-}
-
-
-
-const genderSelect = document.getElementById("gender");
-
-function checkGenderPlaceholder() {
-  if (genderSelect.value === "") {
-    genderSelect.classList.remove("selected");
-  } else {
-    genderSelect.classList.add("selected");
-  }
-}
-
-genderSelect.addEventListener("change", checkGenderPlaceholder);
-window.addEventListener("load", checkGenderPlaceholder); // 새로고침 대비
-
-
 function showIntroStep() {
+  if (!introAudio || !introAudio2) {
+    introAudio = document.getElementById("introAudio1");
+    introAudio2 = document.getElementById("introAudio2");
+    console.log("🧠 DOM 재탐색: introAudio / introAudio2", introAudio, introAudio2);
+  }
   const introStep = document.getElementById("intro-step");
   const guideLines = document.querySelectorAll(".guide-line");
   const icon = document.querySelector(".intro-icon");
   const clickText = document.getElementById("click-to-continue");
 
+  console.log("📌 introAudio2 ID 존재 여부 확인:", introAudio2);
+  console.log("🎯 DOM에서 재선택된 introAudio:", introAudio);
+  console.log("🎯 DOM에서 재선택된 introAudio2:", introAudio2);
+
   introStep.classList.remove("hidden");
   introStep.style.display = "flex";
+
+  // 인트로 오디오 자동 재생 (두 개를 순차적으로 재생)
+  console.log("🔍 첫 번째 오디오 요소:", introAudio);
+  if (introAudio) {
+    introAudio.muted = true;
+    setTimeout(() => {
+      introAudio.play().then(() => {
+        console.log("🎯 첫 번째 introAudio.play() 시도");
+        introAudio.muted = false;
+        introAudio.currentTime = 0;
+        introAudio.onended = () => {
+          console.log("📎 두 번째 인트로 오디오 엘리먼트:", introAudio2);
+          const secondAudio = introAudio2;
+          if (secondAudio) {
+            secondAudio.muted = true;
+            secondAudio.currentTime = 0;
+            setTimeout(() => {
+              secondAudio.play().then(() => {
+                secondAudio.muted = false;
+                console.log("🔊 두 번째 인트로 오디오 재생 성공");
+              }).catch(e => console.error("🧨 두 번째 오디오 자동 재생 실패:", e));
+            }, 1000);
+          } else {
+            console.warn("⚠️ 두 번째 인트로 오디오 엘리먼트를 찾을 수 없습니다.");
+          }
+        };
+
+        console.log("🔊 첫 번째 인트로 오디오 재생 성공");
+      }).catch(err => {
+        console.warn("❌ 자동 재생 실패:", err);
+        document.body.addEventListener("click", () => {
+          introAudio.play().catch(e => console.error("🧨 재시도 실패:", e));
+          if (introAudio2) {
+            introAudio2.play().catch(e => console.error("🧨 두 번째 intro 재시도 실패:", e));
+          }
+        }, { once: true });
+      });
+    }, 800);
+  }
 
   // 아이콘 등장
   icon.classList.remove("hidden");
@@ -254,14 +186,57 @@ function showIntroStep() {
     clickText.classList.remove("hidden");
     setTimeout(() => clickText.classList.add("fade-text-fixed"), 100);
 
-    // 클릭 시 진단 시작
     document.body.addEventListener("click", () => {
-      introStep.classList.add("hidden");
-      clickText.classList.add("hidden");
-      startWebSocket();  // 이걸로 진단 진행 시작
+      if (introAudio) {
+        introAudio.pause();
+        introAudio.currentTime = 0;
+      }
+      if (introAudio2) {
+        introAudio2.pause();
+        introAudio2.currentTime = 0;
+      }
+
+      const introStep = document.getElementById("intro-step");
+      const clickText = document.getElementById("click-to-continue");
+
+      if (introStep) introStep.classList.add("hidden");
+      if (clickText) clickText.classList.add("hidden");
+
+      const questionContainer = document.getElementById("question-container");
+      if (questionContainer) questionContainer.classList.remove("hidden");
+
+      startWebSocket();
     }, { once: true });
   }, 1500);
 }
 
+window.startDiagnosis = startDiagnosis;
 
-window.startDiagnosis = startDiagnosis; 
+// 사용자 정보를 CSV 문자열로 변환
+function convertUserInfoToCSV(user) {
+  const header = ["Name", "Email", "Gender", "Birth"];
+  const values = [user.name, user.email, user.gender, user.birth];
+  return `${header.join(",")}\n${values.join(",")}`;
+}
+
+// CSV 파일 다운로드 함수
+function downloadUserInfoAsCSV() {
+  const csvContent = convertUserInfoToCSV(userInfo);
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "user_info.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// 이메일 전송용 JSON 반환 (예: 백엔드에 POST 요청으로 보낼 경우)
+function getUserInfoJSON() {
+  return JSON.stringify(userInfo);
+}
+
+window.downloadUserInfoAsCSV = downloadUserInfoAsCSV;
+window.getUserInfoJSON = getUserInfoJSON;
