@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   const questionEl = document.getElementById("question");
+  const questionNumberEl = document.getElementById("question-number");
   const responseEl = document.getElementById("responseText");
 
   const checkboxEls = [
@@ -16,21 +17,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   ws.onopen = () => {
     console.log("✅ WebSocket 연결됨");
-    ws.send("start");
+    // 사용자 이름을 sessionStorage에서 받아서 서버에 전달
+    const username = sessionStorage.getItem("username") || "사용자";
+    ws.send(JSON.stringify({ type: "start", username }));
   };
 
   ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
 
-    if (data.type === "question") {
+    if (data.type === "init") {
+      questions = data.questions;
+    } else if (data.type === "question") {
       showQuestion(data.text);
+      currentQuestionIndex++;
     } else if (data.type === "response") {
       handleResponse(data.text);
     }
   };
 
   function showQuestion(text) {
-    questionEl.textContent = text;
+    // 사용자 이름 치환
+    const username = sessionStorage.getItem("username") || "사용자";
+    const personalizedText = text.replace("{name}", username);
+    questionEl.textContent = personalizedText;
+    questionNumberEl.textContent = `문제 ${currentQuestionIndex + 1}`;
     responseEl.textContent = "🗣️ 응답을 기다리는 중...";
     checkboxEls.forEach(cb => cb.checked = false);
   }

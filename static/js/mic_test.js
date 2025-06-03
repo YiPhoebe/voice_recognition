@@ -48,11 +48,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // group-1: icon + 문장 2개
+  // 텍스트 디졸브 먼저 실행
   icon.classList.remove("hidden");
   group1Lines.forEach(line => line.classList.remove("hidden"));
-  await new Promise(resolve => setTimeout(resolve, 400));
   icon.classList.add("fade-text-fixed");
   group1Lines.forEach(line => line.classList.add("fade-text-fixed"));
+
+  // 그룹2 텍스트도 함께 보여줌
+  const group2Lines = document.querySelectorAll(".group-2");
+  group2Lines.forEach(line => {
+    line.classList.remove("hidden");
+    line.classList.add("fade-text-fixed");
+  });
+
+  // 2초 뒤 파형 등장은 텍스트 디졸브 직후에 실행
+  setTimeout(() => {
+    waveformContainer.classList.remove("hidden");
+    waveformContainer.classList.add("fade-text-fixed");
+  }, 2000);
+
+  // TTS 음성은 그룹1 → 그룹2 순차 재생
+  playTTSSequentially([...group1Lines, ...group2Lines]);
 
   // WaveSurfer waveform player setup and audio playback
   waveformContainer.innerHTML = "";  // Clear previous
@@ -111,8 +127,6 @@ function visualizeWaveform(stream) {
 
   // Run TTS first, then waveform and recording
   (async () => {
-    await playTTSSequentially(group1Lines);
-
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       visualizeWaveform(stream);
@@ -127,7 +141,7 @@ function visualizeWaveform(stream) {
         recorder.onstop = () => onRecordingStop(stream);
         recorder.start();
         console.log("🎙️ 녹음 시작");
-        setTimeout(() => recorder.stop(), 4000);
+        setTimeout(() => recorder.stop(), 6000);
       }
 
       async function onRecordingStop(stream) {
@@ -144,10 +158,14 @@ function visualizeWaveform(stream) {
             body: formData,
           });
           const resultText = await response.text();
-          // Always show the recognized answer text first
-          sttResult.textContent = "인식된 답변: " + resultText;
+          // Always show the recognized answer text first, with delayed resultText
+          sttResult.textContent = "인식된 답변:";
           sttResult.classList.remove("hidden");
           sttResult.classList.add("fade-text-fixed");
+
+          setTimeout(() => {
+            sttResult.textContent += " " + resultText;
+          }, 1000);
 
           if (resultText.trim() === "안녕하세요") {
             // Hide the retry message if correct
@@ -163,6 +181,13 @@ function visualizeWaveform(stream) {
             if (retryMessage) {
               retryMessage.classList.remove("hidden");
               retryMessage.classList.add("fade-text-fixed");
+
+                // ✅ [백업용] 파형 디졸브 처리 방식
+            
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            waveformContainer.classList.remove("hidden");
+            waveformContainer.classList.add("fade-text-fixed");
+            
             }
             console.log("❗ 다시 녹음 시작");
             startRecording(stream);
@@ -175,8 +200,6 @@ function visualizeWaveform(stream) {
 
       startRecording(stream);
 
-      waveformContainer.classList.remove("hidden");
-      waveformContainer.classList.add("fade-text-fixed");
     } catch (err) {
       console.error("🎙 마이크 접근 실패:", err);
     }
@@ -191,14 +214,6 @@ function visualizeWaveform(stream) {
   // }, 100);
 
   button.addEventListener("click", () => {
-    if (audio) {
-      try {
-        audio.pause();
-        audio.currentTime = 0;
-      } catch (err) {
-        console.warn("오디오 정지 실패:", err);
-      }
-    }
     window.location.href = "/diagnosis";
   });
 });

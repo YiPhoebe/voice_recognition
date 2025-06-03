@@ -61,5 +61,20 @@ def intro():
 def mic_test():
     return FileResponse("tem/mic_test.html")
 
+@app.get("/diagnosis")
+def diagnosis():
+    return FileResponse("tem/diagnosis.html")
+
 from fastapi.staticfiles import StaticFiles
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+from fastapi import WebSocket
+import json
+
+@app.websocket("/ws/adhd-short")
+async def adhd_short_ws(websocket: WebSocket):
+    await websocket.accept()
+    with open("static/questions_list.json", "r", encoding="utf-8") as f:
+        questions = json.load(f)
+    await websocket.send_json({"type": "init", "questions": questions})
+    await websocket.send_json({"type": "question", "text": questions[0]["text"]})
