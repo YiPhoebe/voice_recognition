@@ -1,0 +1,31 @@
+<!-- /templates/intro.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADHD 테스트 안내</title>
+  <link rel="stylesheet" href="/static/css/intro.css" defer>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+  
+</head>
+<body>
+  <div id="intro-step">
+    <div class="guide-container">
+      <img src="/static/icons/headphones_7310539.svg" class="intro-icon hidden" alt="헤드폰 아이콘" />
+
+      <p class="guide-line hidden group-1">총 20개의 문항이 음성으로 제공됩니다.</p>
+      <p class="guide-line hidden group-1">이어폰을 착용하시거나 볼륨을 높여주세요.</p>
+      <p class="guide-line hidden group-1">질문이 끝난 뒤 3초 안에 마이크에 대고 대답해 주시면 됩니다.</p>
+
+      <!-- 버튼 -->
+      <button class="button" id="start-btn">다음 단계</button>
+    </div>
+  </div>
+</body>
+  <!-- ✅ 오디오 미리 선언 -->
+  <!-- <audio id="introAudio1" src="/static/audio/intro_1.mp3" preload="auto"></audio>
+  <audio id="introAudio2" src="/static/audio/intro_2.mp3" preload="auto"></audio>
+  <audio id="emptyAudio" src="/static/audio/empty.mp3" preload="auto"></audio> -->
+  <script src="/static/js/intro.js" defer></script>
+</html>

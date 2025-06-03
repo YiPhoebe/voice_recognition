@@ -1,0 +1,212 @@
+/* =============================
+   ✅ 전체 공통 스타일 (폰트 기본값)
+============================= */
+/* Pretendard 폰트 Regular(보통) 스타일 등록 */
+@font-face {
+  font-family: 'Pretendard'; /* 사용자 정의 웹폰트 이름 */
+  src: url('/static/fonts/Pretendard-Regular.woff2') format('woff2'); /* Regular 스타일 폰트 파일 경로 */
+  font-weight: 400; /* 일반 두께 */
+  font-style: normal; /* 일반 스타일 */
+}
+
+/* Pretendard 폰트 Bold(굵게) 스타일 등록 */
+@font-face {
+  font-family: 'Pretendard'; /* 동일한 폰트 이름에 다른 두께 설정 */
+  src: url('/static/fonts/Pretendard-Bold.woff2') format('woff2'); /* Bold 스타일 폰트 파일 경로 */
+  font-weight: 600; /* 굵은 두께 */
+  font-style: normal;
+}
+
+/* 전체 문서에 Pretendard 폰트 적용 */
+html, body, * {
+  font-family: 'Pretendard', sans-serif !important;
+}
+
+
+
+/******************************
+  📌 STEP 2: 안내 화면 스타일 (wrap 밖)
+******************************/
+/* 안내 화면 전체 컨테이너 스타일 */
+#intro-step {
+  /* min-height: 200vh; */ /* 필요시 전체 높이 설정 */
+  /* display: flex; */     /* flex 레이아웃(주석처리) */
+  flex-direction: column;  /* 세로 방향 정렬 */
+  /* justify-content: center; */ /* 수직 중앙 정렬(주석처리) */
+  align-items: center;      /* 수평 중앙 정렬 */
+  /* padding: 2rem; */      /* 전체 패딩(주석처리) */
+  /* box-sizing: border-box; */
+  /* text-align: center; */
+  width: 100vw;             /* 전체 뷰포트 너비 사용 */
+  margin-top: 200px;        /* 상단 여백 */
+  /* z-index: 999; */
+}
+
+/* 안내 내부 컨텐츠 래퍼 */
+.intro-inner {
+  flex: 1;                        /* flex 아이템이 공간을 모두 차지 */
+  display: flex;                  /* flex 레이아웃 */
+  flex-direction: column;         /* 세로 방향 정렬 */
+  /* justify-content: center;        수직 중앙 정렬 */
+  align-items: center;            /* 수평 중앙 정렬 */
+  width: 100%;                    /* 전체 너비 사용 */
+}
+
+/* 🎧 안내 아이콘 스타일 */
+.intro-icon {
+  width: 80px;                    /* 아이콘 너비 */
+  height: 80px;                   /* 아이콘 높이 */
+  margin-bottom: 24px;            /* 아래 여백 */
+  opacity: 0;                     /* 기본적으로 보이지 않음 */
+  transition: opacity 1s ease-in-out; /* 투명도 전환 효과 */
+}
+
+/* 아이콘이 표시될 때 */
+.intro-icon.fade-text-fixed {
+  opacity: 1;                     /* 완전히 보이게 함 */
+}
+
+/* 💬 안내 문구 컨테이너 */
+.guide-container {
+  min-height: 200px;              /* 최소 높이 설정 */
+  width: 100%;                    /* 전체 너비 사용 */
+  display: flex;                  /* flex 레이아웃 */
+  flex-direction: column;         /* 세로 방향 정렬 */
+  align-items: center;            /* 수평 중앙 정렬 */
+  justify-content: center;        /* 수직 중앙 정렬 */
+  text-align: center;             /* 텍스트 중앙 정렬 */
+  gap: 12px;                      /* 각 안내 문장 사이 간격 */
+  padding: 1rem 0;                /* 상하 패딩 */
+  box-sizing: border-box;         /* 패딩 포함 박스 크기 계산 */
+}
+
+/* 모든 안내 문장(guide-line)의 기본 스타일 */
+.guide-line {
+  font-size: 1.1rem;              /* 기본 폰트 크기 */
+  line-height: 1.2;               /* 줄 높이 */
+  margin: 0;                      /* 기본 마진 제거 */
+  opacity: 0;                     /* 기본적으로 보이지 않음 */
+  visibility: hidden;             /* 시각적으로 숨김 */
+  transition: opacity 1s ease-in-out, visibility 1s ease-in-out; /* 전환 효과 */
+}
+
+/* 그룹별 안내 문장 스타일 */
+.group-1 {
+  margin-bottom: 0px;             /* 아래 여백 */
+  font-size: 1.2rem;              /* 폰트 크기 */
+  font-weight: 600;               /* 일반 굵기 */
+  color: #3c3c3c;                    /* 짙은 회색 텍스트 */
+}
+
+.group-2 {
+  margin-top: 20px;               /* 위 여백 */
+  margin-bottom: 10px;            /* 아래 여백 */
+  font-size: 1.2rem;              /* 폰트 크기 */
+  font-weight: 600;               /* 중간 굵기 */
+  color: #3c3c3c;                    /* 중간 회색 텍스트 */
+}
+
+.group-3 {
+  margin-top: 8px;                /* 위 여백 */
+  margin-bottom: 8px;             /* 아래 여백 */
+  font-size: 1.1rem;              /* 폰트 크기 */
+  font-weight: 400;               /* 일반 굵기 */
+  color: #555;                    /* 연한 회색 텍스트 */
+}
+
+.group-4 {
+  margin-top: 20px;               /* 위 여백 */
+  margin-bottom: 10px;            /* 아래 여백 */
+  font-size: 1.2rem;              /* 폰트 크기 */
+  font-weight: 600;               /* 중간 굵기 */
+  color: #3c3c3c;                    /* 중간 회색 텍스트 */
+}
+
+.group-5 {
+  margin-top: 32px;               /* 위 여백 */
+  font-size: 1.1rem;              /* 폰트 크기 */
+  font-weight: 400;               /* 일반 굵기 */
+  color: #888;                    /* 밝은 회색 텍스트 */
+}
+
+/* 안내 문장이 표시될 때 (페이드인) */
+.guide-line.fade-text-fixed {
+  opacity: 1;                     /* 완전히 보이게 함 */
+  visibility: visible;            /* 시각적으로 표시 */
+}
+
+/* 🖱️ 클릭 유도 문구 스타일 */
+#click-to-continue {
+  margin-top: 60px;               /* 위 여백 */
+  font-size: 18px;                /* 폰트 크기 */
+  color: #C2BEBE;                 /* 연한 회색 */
+  opacity: 0;                     /* 기본적으로 숨김 */
+  visibility: hidden;             /* 시각적으로 숨김 */
+  transition: opacity 1s ease-in-out, visibility 1s ease-in-out; /* 전환 효과 */
+}
+
+/* 클릭 유도 문구가 표시될 때 */
+#click-to-continue.fade-text-fixed {
+  opacity: 1;                     /* 완전히 보이게 함 */
+  visibility: visible;            /* 시각적으로 표시 */
+}
+
+/* =============================
+   🖱️ #clickMessage 스타일 (click-to-continue와 동일)
+============================= */
+#clickMessage {
+  margin-top: 60px;
+  font-size: 18px;
+  color: #C2BEBE;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 1s ease-in-out, visibility 1s ease-in-out;
+}
+
+#clickMessage.fade-text-fixed {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 완전히 안 보이게 숨김 처리 (display + visibility + opacity 전부) */
+.hidden {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+
+/* ✅ 1. 버튼 간격 & 크기 개선 */
+.button {
+  background-color: #567E92;
+  color: white;
+  border: none;
+  width: fit-content !important;
+  padding: 19px 20px;
+  font-weight: bold;
+  font-size: 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: block;
+  margin-top: 80px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;  /* 또는 absolute */
+  bottom: 0;
+  box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: opacity 1s ease-in-out, visibility 1s ease-in-out, transform 1s ease-in-out;
+}
+
+.button.fade-text-fixed {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0); /* 디폴트는 translateY(10px) 같은 걸로 두고 */
+  transition: opacity 1s ease-in-out, visibility 1s ease-in-out, transform 1s ease-in-out;
+}
+
+.button:hover {
+  background-color: #466b78;                     /* 호버 시 색 진해짐 */
+}

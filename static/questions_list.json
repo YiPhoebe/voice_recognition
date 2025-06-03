@@ -1,18 +1,4 @@
-[
-  {
-      "id": -1,
-      "text": "총 20개의 문항이 음성으로 제공됩니다. 이어폰을 착용하시거나 볼륨을 높여주세요. 질문이 끝난 뒤 3초 안에 마이크에 대고 대답해 주시면 됩니다.",
-      "answer_type": "intro",
-      "audio": "/static/audio/intro_1.mp3",
-      "skippable": false
-    },
-    {
-      "id": 0,
-      "text": "시작하실려면 화면을 클릭해주세요.",
-      "answer_type": "intro",
-      "audio": "/static/audio/intro_2.mp3",
-      "skippable": false
-    },
+[ 
     {
       "id": 1,
       "text": "문제 1: 대화를 할 때 잘 듣지 않는 경우가 있다.",
@@ -22,7 +8,7 @@
     },
     {
       "id": 2,
-      "text": "문제 2: 지시를 잘 따르지 않거나 숙제, 임무 등을 완수하지 못하는 경우가 있다.",
+      "text": "문제 2: 지시를 잘 따르지 않거나 숙제, 임무 등을 완수하지 못하는 경우가 있다.// 문제 형식을 ~까 로 바꾸기",
       "answer_type": "scale_1_4",
       "audio": "/static/audio/q2.mp3",
       "skippable": false

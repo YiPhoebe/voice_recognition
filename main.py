@@ -1,175 +1,56 @@
-from email import message
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from starlette.requests import Request
-from pydub import AudioSegment
-import speech_recognition as sr
-import os
-import uuid
-import shutil
-import json
-import asyncio
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+import requests
+from io import BytesIO
 
-from pydantic import BaseModel
-import csv
-from datetime import datetime
 
 app = FastAPI()
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="tem")
+from fastapi.middleware.cors import CORSMiddleware
 
-with open("static/questions_list.json", "r", encoding="utf-8") as f:
-    QUESTIONS = json.load(f)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-class UserInfo(BaseModel):
-    name: str
-    email: str
-    gender: str
-    birth: str
+from fastapi.responses import StreamingResponse
 
-@app.post("/save-user")
-async def save_user(request: Request):
-    user_info = await request.json()
+@app.get("/synthesize")
+def synthesize_get():
+    return JSONResponse(content={"status": "ok", "message": "GET 요청 정상"})
 
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    # ✅ 파일 존재 여부 확인 후 헤더 설정
-    file_exists = os.path.isfile("user_data.csv")
-    with open("user_data.csv", mode="a", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file)
-        if not file_exists:
-            writer.writerow(["id", "email", "name", "gender", "birth", "timestamp"])
-
-        # ✅ 고유 id는 기존 라인 수 기준 +1
-        with open("user_data.csv", "r", encoding="utf-8") as f:
-            line_count = sum(1 for row in f)
-
-        user_id = line_count  # header 제외하고 1부터 시작하려면 -1
-
-        writer.writerow([
-            user_id,
-            user_info.get("email", ""),
-            user_info.get("name", ""),
-            user_info.get("gender", ""),
-            user_info.get("birth", ""),
-            now
-        ])
-
-    return {"message": "사용자 정보 저장 완료"}
-
-@app.get("/", response_class=HTMLResponse)
-async def get_home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
-@app.websocket("/ws/adhd-short")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    print("✅ WebSocket 연결 완료")
-
-    question_index = 0
-    retry_count = 0
-
-    async def send_question():
-        print(f"[질문 전송] ▶ {QUESTIONS[question_index]['audio']}")
-        await websocket.send_json({
-            "question_num": question_index + 1,
-            "text": QUESTIONS[question_index]["text"],
-            "audio_path": QUESTIONS[question_index]["audio"]
-        })
-
-    await send_question()
-
+@app.post("/synthesize")
+async def synthesize(request: Request):
+    data = await request.form()
+    text = data.get("text", "")
     try:
-        while True:
-            message = await websocket.receive()
+        tts_response = requests.post("http://192.168.3.19:10081/synthesize", data={"text": text})
+        if tts_response.status_code != 200:
+            raise Exception("TTS 서버 응답 오류")
 
-            if websocket.client_state.name != "CONNECTED":
-                print("🚫 클라이언트 연결 끊김")
-                break
-
-            # ✅ 텍스트 명령 처리
-            if "text" in message:
-                command = message["text"]
-
-                if command == "SKIP":
-                    print(f"⏭️ 질문 {question_index+1} 건너뜀")
-                    retry_count = 0
-                    question_index += 1
-                    if question_index < len(QUESTIONS):
-                        await send_question()
-                    else:
-                        await websocket.send_text("✅ 모든 질문이 완료되었습니다. 수고하셨습니다!")
-                        await websocket.close()
-                        break
-                    continue
-
-                elif command == "RESTART":
-                    print("🔄 진단 재시작")
-                    question_index = 0
-                    retry_count = 0
-                    await send_question()
-                    continue
-
-            # ✅ 음성 데이터 처리
-            elif "bytes" in message:
-                audio_data = message["bytes"]
-                session_id = str(uuid.uuid4())
-                session_dir = f"tmp/{session_id}"
-                os.makedirs(session_dir, exist_ok=True)
-                wav_path = os.path.join(session_dir, "response.wav")
-
-                with open(wav_path, "wb") as f:
-                    f.write(audio_data)
-
-                AudioSegment.from_file(wav_path).export(wav_path, format="wav")
-                recognizer = sr.Recognizer()
-
-                try:
-                    with sr.AudioFile(wav_path) as source:
-                        audio = recognizer.record(source)
-
-                    text = recognizer.recognize_google(audio, language="ko-KR")
-                    print(f"[STT 원본 텍스트] ▶ '{text}'")
-                    print(f"[STT strip 결과] ▶ '{text.strip()}'")
-                    print(f"[STT {question_index+1}] ▶ {text}")
-
-                    if not text.strip():
-                        raise sr.UnknownValueError()
-
-                    await websocket.send_text(text)
-                    await asyncio.sleep(0.5)
-
-                    retry_count = 0
-                    question_index += 1
-
-                    if question_index < len(QUESTIONS):
-                        await send_question()
-                    else:
-                        await websocket.send_text("✅ 모든 질문이 완료되었습니다. 수고하셨습니다!")
-                        await websocket.close()
-                        break
-
-                except sr.UnknownValueError:
-                    print(f"[STT ERROR {question_index+1}] 빈 응답")
-                    retry_count += 1
-                    if retry_count >= 3:
-                        await websocket.send_text("🤖 3회 동안 응답이 없어 진단을 종료합니다.")
-                        await websocket.close()
-                        break
-                    else:
-                        await websocket.send_text("🤖 인식된 내용이 없습니다.")
-                        await asyncio.sleep(0.5)
-                        await send_question()
-
-                finally:
-                    shutil.rmtree(session_dir, ignore_errors=True)
-
-    except WebSocketDisconnect:
-        print("❌ WebSocket 연결 끊김")
+        return StreamingResponse(
+            BytesIO(tts_response.content),
+            media_type="audio/mpeg"
+        )
     except Exception as e:
-        print("❗ 예외 발생:", e)
-        await websocket.close()
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
 
+from fastapi.responses import FileResponse
+
+@app.get("/")
+def root():
+    return FileResponse("tem/index.html")
+
+@app.get("/intro")
+def intro():
+    return FileResponse("tem/intro.html")
+
+@app.get("/mic_test")
+def mic_test():
+    return FileResponse("tem/mic_test.html")
+
+from fastapi.staticfiles import StaticFiles
+app.mount("/static", StaticFiles(directory="static"), name="static")

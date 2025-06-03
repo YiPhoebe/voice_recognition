@@ -1,0 +1,64 @@
+/* =============================
+   ✅ 전체 공통 스타일 (폰트 기본값)
+============================= */
+html, body, * {
+    font-family: 'pretendard', sans-serif !important;  /* 전체 폰트를 pretendard로 설정 */
+  }
+
+/* =============================
+   📌 STEP 3: 질문 화면 스타일
+============================= */
+/* ✅ 1. 버튼 간격 & 크기 개선 */
+.audio-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+  
+  .audio-controls button {
+    background-color: #5d8695;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .audio-controls button:hover {
+    background-color: #466b78; /* 호버 색상 추가 */
+  }
+  
+  
+  /* ✅ 2. 질문 영역 강조 */
+  .question-text {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    color: #000 !important;
+    z-index: 9999 !important;
+  }
+  
+  
+  /* ✅ 3. STT 결과 시각 강화 */
+  .stt-result {
+    font-size: 16px;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  
+  /* ✅ 4. 체크박스 + 라벨을 보기 좋게 */
+  .answer-options {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 1rem;
+  }
+  
+  .answer-options input[type="checkbox"]:checked + label {
+    font-weight: bold;
+    color: #5d8695;
+  }

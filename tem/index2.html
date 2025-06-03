@@ -2,15 +2,102 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>ADHD 음성 진단 시스템</title>
-  <link rel="stylesheet" href="/static/css/style.css">
+  <title>ADHD 자가 진단 테스트</title>
 
+  <!-- ✅ Roboto 폰트 불러오기 -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+
+  <!-- ✅ 외부 스타일시트 연결 (정확한 경로로) -->
+  <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-  <h1>ADHD 음성 진단 시스템</h1>
 
-  <div class="button-group">
-    <button id="start-btn" onclick="startDiagnosis()">테스트 시작</button>
+  <!-- ✅ 전체 콘텐츠 감싸는 박스 -->
+<div class="wrap">
+
+  <!-- ✅ STEP 1: 입력 폼 전체 묶기 -->
+  <div id="input-form">
+    <h1 class="title-main">ADHD</h1>
+    <h2 class="title-sub">자가 진단 테스트</h2>
+
+    <!-- 이메일 -->
+    <div class="form-section">
+      <label for="email">이메일 주소</label>
+      <div class="input-icon">
+        <img src="/static/icons/free-icon-email-2258541.svg" alt="이메일 아이콘" aria-hidden="true" />
+        <input type="email" id="email" name="email" placeholder="email@email.com" />
+      </div>
+    </div>
+
+    <!-- 이름 / 성별 -->
+    <div class="form-section">
+      <div class="form-row">
+        <div class="input-group">
+          <label for="name">이름</label>
+          <input type="text" id="name" name="name" placeholder="이름 입력" />
+        </div>
+        <div class="input-group">
+          <label for="gender">성별</label>
+          <select id="gender" name="gender" class="gender-select">
+            <option value="" disabled selected hidden>성별을 선택해 주세요</option>
+            <option value="female">여성</option>
+            <option value="male">남성</option>
+            <option value="other">기타</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 생년월일 -->
+    <div class="form-section">
+      <label>생년월일</label>
+      <div class="form-row birth-input-group">
+        <div class="input-inline">
+          <input type="text" id="year" name="birth_year" placeholder="1990" />
+          <span>년</span>
+        </div>
+        <div class="input-inline">
+          <input type="text" id="month" name="birth_month" placeholder="01" />
+          <span>월</span>
+        </div>
+        <div class="input-inline">
+          <input type="text" id="day" name="birth_day" placeholder="01" />
+          <span>일</span>
+        </div>
+      </div>
+      <input type="hidden" id="birth" name="birth" />
+    </div>
+
+    <!-- ✅ STEP 2: 테스트 버튼 -->
+    <button class="button" id="start-btn" onclick="startDiagnosis()">테스트 시작</button>
+    <p id="warning-message" class="hidden" style="color: red; margin-top: 10px;">❗ 모든 항목을 입력해주세요.</p>
+  </div>
+</div>    
+
+<!-- ✅ STEP 3: 안내 문구 화면 -->
+<div id="intro-step" class="hidden">
+  <div class="guide-container">
+    <img src="/static/icons/headphones_7310539.svg" class="intro-icon hidden" />
+
+    <!-- 안내 문구 두 줄 -->
+    <p class="guide-line hidden">총 20개의 문항이 음성으로 제공됩니다.</p>
+    <p class="guide-line hidden">이어폰을 착용하시거나 볼륨을 높여주세요.</p>
+    <p class="guide-line hidden">질문이 끝난 뒤 3초 안에 마이크에 대고 대답해 주시면 됩니다.</p>
+
+  <!-- 클릭 유도 문구 -->
+    <p id="click-to-continue" class="hidden">시작하시려면 화면을 클릭해주세요.</p>
+  </div>
+</div>
+
+
+
+
+<!-- 진단 질문 UI -->
+<div id="diagnosis-ui" class="hidden">
+  <h2 class="diagnosis-title">ADHD 음성 진단 시스템</h2>
+
+  <!-- 제어 버튼 -->
+  <div class="diagnosis-controls">
     <button onclick="pauseAudio()">일시정지</button>
     <button onclick="resumeAudio()">이어 듣기</button>
     <button onclick="replayAudio()">다시 듣기</button>
@@ -18,23 +105,35 @@
     <button onclick="restartDiagnosis()">처음부터 다시</button>
   </div>
 
-  <!-- 질문 영역 -->
-  <div id="question">문제는 음성으로 나오니 이어폰을 착용해 주시거나 볼륨을 올려주세요.</div><br>
+  <!-- 질문 텍스트 -->
+  <div id="question" class="question-text">문제가 여기에 표시됩니다.</div>
 
-  <!-- 음성 상태 메시지 -->
-  <div id="response">답변 듣는 중:</div>
-
-  <!-- 음성 결과 텍스트 -->
-  <div id="responseText">여기 인식된 음성이 나옵니다.</div>
-
-  <!-- 점수 체크박스 -->
+  <!-- 체크박스 -->
   <div class="checkbox-group">
-    <label><input type="checkbox" id="checkbox-1"> ① 전혀 그렇지 않다</label>
-    <label><input type="checkbox" id="checkbox-2"> ② 약간 그렇다</label>
-    <label><input type="checkbox" id="checkbox-3"> ③ 꽤 그렇다</label>
-    <label><input type="checkbox" id="checkbox-4"> ④ 아주 많이 그렇다</label>
+    <label><input type="checkbox" id="checkbox-1" value="1"> 전혀 그렇지 않다</label>
+    <label><input type="checkbox" id="checkbox-2" value="2"> 약간 그렇다</label>
+    <label><input type="checkbox" id="checkbox-3" value="3"> 꽤 그렇다</label>
+    <label><input type="checkbox" id="checkbox-4" value="4"> 아주 많이 그렇다</label>
   </div>
 
-  <script src="/static/js/diagnosis.js"></script>
+  <!-- 인식된 답변 -->
+  <div id="responseText" class="response-text">🗣️ 인식된 답변이 여기에 표시됩니다.</div>
+</div>
+
+<!-- ✅ 제일 마지막에 JS 연결 -->
+<audio id="introAudio1" src="/static/audio/intro_1.mp3" type="audio/mp3"></audio>
+<audio id="introAudio2" src="/static/audio/intro_2.mp3" type="audio/mp3"></audio>
+<script src="/static/js/diagnosis.js"></script>
+<script>
+  function updateQuestionUI(questionObj) {
+    const questionText = questionObj.text || "❓ 질문을 불러올 수 없습니다.";
+    const questionElement = document.getElementById("question");
+    if (questionElement) {
+      questionElement.innerText = questionText;
+    } else {
+      console.error("❌ question 요소를 찾을 수 없습니다.");
+    }
+  }
+</script>
 </body>
 </html>

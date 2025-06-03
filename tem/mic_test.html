@@ -1,0 +1,27 @@
+<!-- /tem/mic_test.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>마이크 테스트</title>
+  <link rel="stylesheet" href="/static/css/intro.css" />
+</head>
+<body>
+  <div id="intro-step">
+    <div class="guide-container">
+      <img src="/static/icons/free-icon-mic-915710.svg" class="intro-icon" alt="마이크 아이콘" />
+
+      <p class="guide-line group-1">마이크 테스트를 진행합니다.</p>
+      <p class="guide-line group-1">"안녕하세요"라고 말씀해주세요.</p>
+      <p class="guide-line group-1" id="mic-status">🎙 녹음 중...</p>
+      <button id="startMicTest" class="fade-text-fixed">🎤 마이크 테스트 시작</button>
+      <div id="mic-result"></div>
+
+      <p id="click-to-continue" class="hidden group-2">화면을 클릭하시면 진단 테스트로 넘어갑니다.</p>
+    </div>
+  </div>
+
+  <script src="/static/js/mic_test.js" defer></script>
+</body>
+</html>

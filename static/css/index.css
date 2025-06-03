@@ -2,7 +2,7 @@
    ✅ 전체 공통 스타일 (폰트 기본값)
 ============================= */
 html, body, * {
-  font-family: 'pretendard', sans-serif !important;  /* 전체 폰트를 pretendard로 설정 */
+  font-family: 'Pretendard', sans-serif !important;  /* 전체 폰트를 pretendard로 설정 */
 }
 
 
@@ -29,6 +29,7 @@ body {
   display: flex;                   /* Flexbox 레이아웃 적용 */
   flex-direction: column;         /* 자식 요소들을 위에서 아래 방향으로 정렬 */
   align-items: stretch;           /* 내부 요소들을 너비 100%로 늘리기 */
+  margin-top: -20px; /* 페이지 전체를 10픽셀 위로 살짝 올림 (반응형 포함) */
 }
 
 /* ✅ 반응형: 태블릿 이상일 때 여유 있게 */
@@ -36,6 +37,7 @@ body {
   .wrap {
     max-width: 480px;              /* 더 넓은 너비로 확장 (태블릿 대응) */
     padding: 40px;                 /* 여백도 넓게 적용 */
+    margin-top: -30px; /* 유지 */
   }
 }
 
@@ -43,28 +45,24 @@ body {
   .wrap {
     max-width: 380px;              /* 다시 살짝 좁혀서 너무 넓어지는 것 방지 (디자인 안정성) */
     padding: 40px;                 /* 여백 유지 */
+    margin-top: -20px; /* 유지 */
   }
 
-  .title-main,
-  .title-sub {
-    font-size: 36px;               /* 타이틀 텍스트 크기 크게 (PC는 여유 있음) */
-  }
 
-  .button {
-    font-size: 28px;               /* 버튼 텍스트도 키움 */
-  }
 }
 
 .title-main {
   font-size: 32px;                 /* 기본 타이틀 텍스트 크기 */
   font-weight: bold;              /* 글자를 굵게 */
   margin: 0;                      /* 기본 마진 제거 */
+  color: #3c3c3c;
   text-align: center;            /* 텍스트 가운데 정렬 */
 }
 
 .title-sub {
   font-size: 32px;                 /* 서브 타이틀도 동일한 크기 */
   font-weight: bold;              /* 굵게 표시 */
+  color: #3c3c3c;
   margin: 4px 0 32px;             /* 위 4px, 아래 32px 마진 (간격 조정) */
   text-align: center;             /* 가운데 정렬 */
 }
@@ -78,7 +76,7 @@ body {
   display: inline-block;         /* 줄바꿈 가능한 인라인 블록 요소로 설정 */
   font-weight: bold;             /* 굵은 글씨 */
   margin-bottom: 6px;            /* 입력창과 간격 확보 */
-  color: #333;                   /* 텍스트 색상: 진한 회색 */
+  color: #3c3c3c;                   /* 텍스트 색상: 진한 회색 */
 }
 
 .input-icon {
@@ -162,175 +160,41 @@ body {
 .input-inline span {
   font-weight: bold;              /* 굵게 */
   font-size: 14px;                /* 입력칸과 통일된 크기 */
-  color: #333;                    /* 진회색 */
+  color: #3c3c3c;                    /* 진회색 */
   min-width: 24px;                /* 간격 유지를 위한 최소 너비 */
 }
 
 .gender-select {
-  color: #333;                    /* 일반 항목 색상 */
+  color: #3c3c3c;                    /* 일반 항목 색상 */
 }
 
 .gender-select option[value=""] {
   color: #aaa;                                    /* placeholder는 연하게 */
 }
 
+.button.fade-in {
+  opacity: 1;
+  transition: opacity 1s ease;
+}
+
 .button {
-  background-color: #5d8695;      /* 버튼 배경색 (청록계열) */
+  background-color: #567E92;      /* 버튼 배경색 (청록계열) */
   color: white;                   /* 글자색 흰색 */
   border: none;                   /* 테두리 없음 */
   width: fit-content !important;  /* 내용에 맞게 자동 너비 설정 */
-  padding: 12px 18px;             /* 상하/좌우 여백 */
+  padding: 19px 20px;             /* 상하/좌우 여백 */
   font-weight: bold;              /* 글자 굵게 */
-  font-size: 25px;                /* 버튼 내 글자 크기 */
-  border-radius: 6px;             /* 둥근 모서리 */
-  cursor: popretendard;                /* 커서를 손모양으로 변경 */
-  margin-top: 0px;
+  font-size: 24px;                /* 버튼 내 글자 크기 */
+  border-radius: 10px;             /* 둥근 모서리 */
+  cursor: pointer;                /* 커서를 손모양으로 변경 */
   display: block;
-  margin: 0 auto;                 /* 가운데 정렬 */
+  margin-top: 60px;
+  margin-left: auto;
+  margin-right: auto;
+  opacity: 1;
   box-shadow: 0px 2px 6px rgba(0,0,0,0.2); /* 그림자 효과 */
 }
 
 .button:hover {
   background-color: #466b78;                     /* 호버 시 색 진해짐 */
-}
-
-/******************************
-  📌 STEP 2: 안내 화면 스타일 (wrap 밖)
-******************************/
-#intro-step {
-  height: 400vh;
-  display: none;
-  top: 0; left: 0;
-  flex-direction: column;
-  background-color: white;
-  align-items: center;
-  z-index: 999;
-  padding: 2rem;
-  box-sizing: border-box;
-  text-align: center;
-  width: 100vw;  
-  margin-top: 100px;
-}
-
-/* 🎧 아이콘 */
-.intro-icon {
-  width: 80px;
-  height: 80px;
-  margin-bottom: 24px;
-  opacity: 0;
-  transition: opacity 1s ease-in-out;
-}
-
-.intro-icon.fade-text-fixed {
-  opacity: 1;
-}
-
-/* 💬 안내 문구 */
-.guide-container {
-  min-height: 150px; /* 적절한 높이 주기 */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  /* gap: 12px; */
-  text-align: center;
-}
-
-.guide-line {
-  display: block;
-  font-size: 22px;
-  font-weight: 600;
-  color: #333;
-  opacity: 0;
-  visibility: hidden;
-  text-align: center;
-  margin: 0.5rem 0;
-  /* line-height: 1.6; */
-  transition: opacity 1s ease-in-out;
-}
-
-.guide-line.fade-text-fixed {
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-/* 🖱️ 클릭 유도 */
-#click-to-continue {
-  margin-top: 100px;
-  font-size: 16px;
-  color: gray;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 1s ease-in-out, visibility 1s ease-in-out;
-}
-
-#click-to-continue.fade-text-fixed {
-  opacity: 1;
-  visibility: visible;
-}
-
-.hidden {                           /* 완전히 안 보이게 숨김 처리 (display + visibility + opacity 전부) */
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-}
-
-.fade-text-fixed {
-  opacity: 1 !important;
-  visibility: visible !important;
-  transition: opacity 1s ease-in-out;
-  position: relative; /* ✅ 요거 추가! */
-}
-
-/* ✅ 1. 버튼 간격 & 크기 개선 */
-.audio-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin-bottom: 1rem;
-}
-
-.audio-controls button {
-  background-color: #5d8695;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  font-size: 14px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.audio-controls button:hover {
-  background-color: #466b78; /* 호버 색상 추가 */
-}
-
-
-/* ✅ 2. 질문 영역 강조 */
-.question-text {
-  font-size: 18px;
-  font-weight: bold;
-  margin: 1rem 0;
-  text-align: center;
-}
-
-
-/* ✅ 3. STT 결과 시각 강화 */
-.stt-result {
-  font-size: 16px;
-  margin-bottom: 1rem;
-  text-align: center;
-}
-
-/* ✅ 4. 체크박스 + 라벨을 보기 좋게 */
-.answer-options {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: 1rem;
-}
-
-.answer-options input[type="checkbox"]:checked + label {
-  font-weight: bold;
-  color: #5d8695;
 }

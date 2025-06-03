@@ -1,0 +1,35 @@
+<!-- /templates/adhd_test.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>ADHD 진단 질문</title>
+  <link rel="stylesheet" href="/static/css/diagnosis.css">
+</head>
+<body>
+  <div id="diagnosis-ui">
+    <h2 class="diagnosis-title">ADHD 음성 진단 시스템</h2>
+
+    <div class="diagnosis-controls">
+      <button onclick="pauseAudio()">일시정지</button>
+      <button onclick="resumeAudio()">이어 듣기</button>
+      <button onclick="replayAudio()">다시 듣기</button>
+      <button onclick="skipQuestion()">건너뛰기</button>
+      <button onclick="restartDiagnosis()">처음부터 다시</button>
+    </div>
+
+    <div id="question" class="question-text">문제가 여기에 표시됩니다.</div>
+
+    <div class="checkbox-group">
+      <label><input type="checkbox" id="checkbox-1" value="1"> 전혀 그렇지 않다</label>
+      <label><input type="checkbox" id="checkbox-2" value="2"> 약간 그렇다</label>
+      <label><input type="checkbox" id="checkbox-3" value="3"> 꽤 그렇다</label>
+      <label><input type="checkbox" id="checkbox-4" value="4"> 아주 많이 그렇다</label>
+    </div>
+
+    <div id="responseText" class="response-text">🗣️ 인식된 답변이 여기에 표시됩니다.</div>
+  </div>
+
+  <script src="/static/js/diagnosis.js"></script>
+</body>
+</html>
