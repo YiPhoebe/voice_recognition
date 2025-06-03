@@ -6,14 +6,18 @@
     font-style: normal; /* 일반 스타일 */
   }
   
-  /* Pretendard 폰트 Bold(굵게) 스타일 등록 */
-  @font-face {
-    font-family: 'Pretendard'; /* 동일한 폰트 이름에 다른 두께 설정 */
-    src: url('/static/fonts/Pretendard-Bold.woff2') format('woff2'); /* Bold 스타일 폰트 파일 경로 */
-    font-weight: 600; /* 굵은 두께 */
-    font-style: normal;
-  }
-  
+* {
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* Pretendard 폰트 Bold(굵게) 스타일 등록 */
+@font-face {
+  font-family: 'Pretendard'; /* 동일한 폰트 이름에 다른 두께 설정 */
+  src: url('/static/fonts/Pretendard-Bold.woff2') format('woff2'); /* Bold 스타일 폰트 파일 경로 */
+  font-weight: 600; /* 굵은 두께 */
+  font-style: normal;
+}
+
 
 body {
   background-color: #ffffff;
@@ -24,27 +28,46 @@ body {
   justify-content: center;
   align-items: center;
   height: 100vh;
+  color: #3c3c3c;
 }
 
 .guide-container {
-  text-align: center;
-  max-width: 600px;
-  padding: 40px 24px;
+  min-height: 200px;              /* 최소 높이 설정 */
+  width: 100%;                    /* 전체 너비 사용 */
+  display: flex;                  /* flex 레이아웃 */
+  flex-direction: column;         /* 세로 방향 정렬 */
+  align-items: center;            /* 수평 중앙 정렬 */
+  justify-content: center;        /* 수직 중앙 정렬 */
+  text-align: center;             /* 텍스트 중앙 정렬 */
+  gap: 12px;                      /* 각 안내 문장 사이 간격 */
+  padding: 1rem 0;                /* 상하 패딩 */
+  box-sizing: border-box;         /* 패딩 포함 박스 크기 계산 */
 }
 
+/* 🎧 안내 아이콘 스타일 */
 .intro-icon {
-  width: 80px;
-  height: 80px;
-  margin-bottom: 32px;
+  width: 80px;                    /* 아이콘 너비 */
+  height: 80px;                   /* 아이콘 높이 */
+  margin-bottom: 24px;            /* 아래 여백 */
+  opacity: 0;                     /* 기본적으로 보이지 않음 */
+  transition: opacity 1s ease-in-out; /* 투명도 전환 효과 */
 }
 
+/* 아이콘이 표시될 때 */
+.intro-icon.fade-text-fixed {
+  opacity: 1;                     /* 완전히 보이게 함 */
+}
+
+/* 모든 안내 문장(guide-line)의 기본 스타일 */
 .guide-line {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: #333;
-  margin: 16px 0;
-  opacity: 0;
-  transition: opacity 1s ease-in-out;
+  font-size: 1.1rem;              /* 기본 폰트 크기 */
+  line-height: 1.2;               /* 줄 높이 */
+  font-weight: 600;
+  color: #3c3c3c;
+  margin: 0px 0;                      /* 기본 마진 제거 */
+  opacity: 0;                     /* 기본적으로 보이지 않음 */
+  visibility: hidden;             /* 시각적으로 숨김 */
+  transition: opacity 1s ease-in-out, visibility 1s ease-in-out; /* 전환 효과 */
 }
 
 .fade-text-fixed {
@@ -57,19 +80,130 @@ body {
 .group-4,
 .group-5 {
   transition: opacity 1s ease-in-out;
+  font-weight: 600;
 }
 
+.guide-line.fade-text-fixed,
+.intro-icon.fade-text-fixed,
+.group-1.fade-text-fixed,
+.group-2.fade-text-fixed,
+.group-3.fade-text-fixed,
+.group-4.fade-text-fixed,
+.group-5.fade-text-fixed {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0);
+}
+
+
+
 .hidden {
-  display: none;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: opacity 1s ease-in-out, visibility 1s ease-in-out;
 }
 
 #mic-result {
   width: 12px;
   height: 30px;
-  background-color: #3b82f6;
-  margin: 20px auto;
+  background-color: #3c3c3c;
+  margin: 10px auto;
   transition: transform 0.1s linear;
   transform-origin: bottom;
   display: inline-block;
   border-radius: 4px;
+  /* ✅ 추가 파형과 동일한 스타일 유지 (기존 파형 디자인) */
+}
+
+
+/* ✅ STT 텍스트 출력 영역 스타일 */
+#stt-result,
+#retry-message {
+  font-size: 1.0rem;              /* 폰트 크기 통일 */
+  line-height: 1.4;               /* 줄 간격 */
+  font-weight: 600;               /* 굵은 텍스트 */
+  text-align: center;             /* 중앙 정렬 */
+  color: #3c3c3c;                 /* 텍스트 색상 */
+  margin-top: 3px;                /* 위쪽 여백 */
+  margin-bottom: 3px;             /* 아래쪽 여백 */
+}
+
+/* ✅ 파형 컨테이너: 여러 파형을 수직으로 배치할 수 있도록 래핑 */
+.waveform-container {
+  display: flex;                          /* 내부 파형 막대를 세로로 정렬하기 위해 flex 사용 */
+  flex-direction: column;                 /* 파형 막대들을 수직 방향으로 배치 */
+  gap: 8px;                               /* 파형 막대들 간의 간격 설정 */
+  align-items: center;                    /* 파형 막대들을 수평 중앙 정렬 */
+  margin-top: 40px;                       /* 안내 텍스트("안녕하세요" 등)와 파형 사이 간격 */
+  margin-bottom: 32px;                    /* 파형과 아래 STT 출력 텍스트 사이 간격 */
+}
+
+/* ✅ 공통 파형 스타일 (막대 파형) */
+.waveform-bar {
+  width: 12px;
+  height: 30px;
+  background-color: #5b8dbc;
+  border-radius: 4px;
+  display: inline-block;
+  margin: 0 1px;
+  transition: transform 0.1s linear;
+  transform-origin: bottom;
+}
+
+/* ✅ 1. 버튼 간격 & 크기 개선 */
+.next-button {
+  background-color: #567E92;
+  color: white;
+  border: none;
+  width: fit-content !important;
+  padding: 19px 20px;
+  font-weight: 600;
+  font-size: 24px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: block;
+  margin-top: 30px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;  /* 또는 absolute */
+  bottom: 0;
+  box-shadow: 0px 2px 6px rgba(0,0,0,0.2);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: opacity 1s ease-in-out, visibility 1s ease-in-out, transform 1s ease-in-out;
+}
+
+.next-button.fade-text-fixed {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0); /* 디폴트는 translateY(10px) 같은 걸로 두고 */
+  transition: opacity 1s ease-in-out, visibility 1s ease-in-out, transform 1s ease-in-out;
+}
+
+.next-button:hover {
+  background-color: #466b78;                     /* 호버 시 색 진해짐 */
+}
+
+/* 음성 파형 shake 애니메이션 */
+@keyframes shake {
+  0% { transform: scaleY(1); }
+  25% { transform: scaleY(1.4); }
+  50% { transform: scaleY(0.8); }
+  75% { transform: scaleY(1.3); }
+  100% { transform: scaleY(1); }
+}
+
+.shake {
+  animation: shake 0.6s infinite;
+}
+
+/* "안녕하세요" 텍스트 아래 여백 */
+.text-bottom-spacing {
+  margin-bottom: 50px;
+}
+
+/* 오디오 파형 아래 STT 결과 간 여백 */
+.canvas-bottom-spacing {
+  margin-bottom: 12px;
 }

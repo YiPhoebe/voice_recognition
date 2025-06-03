@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, File, UploadFile
+from utils import stt  # stt.py 모듈 import
 from fastapi.responses import JSONResponse
 import requests
 from io import BytesIO
@@ -15,6 +16,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+from fastapi.responses import PlainTextResponse
+
+@app.post("/stt", response_class=PlainTextResponse)
+async def speech_to_text(file: UploadFile = File(...)):
+    audio_bytes = await file.read()
+    result = stt.transcribe_audio(audio_bytes)
+    return result
 
 from fastapi.responses import StreamingResponse
 
