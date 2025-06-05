@@ -1,21 +1,21 @@
-/* Pretendard 폰트 Regular(보통) 스타일 등록 */
+/* SUIT 폰트 Regular(보통) 스타일 등록 */
 @font-face {
-    font-family: 'Pretendard'; /* 사용자 정의 웹폰트 이름 */
-    src: url('/static/fonts/Pretendard-Regular.woff2') format('woff2'); /* Regular 스타일 폰트 파일 경로 */
+    font-family: 'SUIT'; /* 사용자 정의 웹폰트 이름 */
+    src: url('/static/fonts/SUIT-Bold.woff2') format('woff2'); /* Regular 스타일 폰트 파일 경로 */
     font-weight: 400; /* 일반 두께 */
     font-style: normal; /* 일반 스타일 */
   }
   
-* {
-  font-family: 'Pretendard', sans-serif;
-}
-
-/* Pretendard 폰트 Bold(굵게) 스타일 등록 */
+/* SUIT 폰트 Bold(굵게) 스타일 등록 */
 @font-face {
-  font-family: 'Pretendard'; /* 동일한 폰트 이름에 다른 두께 설정 */
-  src: url('/static/fonts/Pretendard-Bold.woff2') format('woff2'); /* Bold 스타일 폰트 파일 경로 */
+  font-family: 'SUIT'; /* 동일한 폰트 이름에 다른 두께 설정 */
+  src: url('/static/fonts/SUIT-Bold.woff2') format('woff2'); /* Bold 스타일 폰트 파일 경로 */
   font-weight: 600; /* 굵은 두께 */
   font-style: normal;
+}
+
+html, body, * {
+  font-family: 'SUIT', sans-serif !important;
 }
 
 
@@ -23,7 +23,7 @@ body {
   background-color: #ffffff;
   margin: 0;
   padding: 0;
-  font-family: 'Pretendard', sans-serif;
+  font-family: 'SUIT', sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;

@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   button.style.opacity = "0";
   button.style.transition = "opacity 1s";
 
-  const backendUrl = "http://localhost:10081/synthesize";
+  const backendUrl = "http://192.168.3.19:10081/synthesize";
   const ttsCache = new Map();
 
   async function preloadTTS(text) {

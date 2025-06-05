@@ -1,64 +1,159 @@
 /* =============================
    ✅ 전체 공통 스타일 (폰트 기본값)
 ============================= */
+/* SUIT 폰트 Regular(보통) 스타일 등록 */
+@font-face {
+    font-family: 'SUIT'; /* 사용자 정의 웹폰트 이름 */
+    src: url('/static/fonts/SUIT-Regular.woff2') format('woff2'); /* Regular 스타일 폰트 파일 경로 */
+    font-weight: 400; /* 일반 두께, 숫자가 낮을수록 얇음 */
+    font-style: normal; /* 일반 스타일, 기울기 없음 */
+}
+
+/* SUIT 폰트 Bold(굵게) 스타일 등록 */
+@font-face {
+  font-family: 'SUIT'; /* 동일한 폰트 이름에 다른 두께 설정 */
+  src: url('/static/fonts/SUIT-Bold.woff2') format('woff2'); /* Bold 스타일 폰트 파일 경로 */
+  font-weight: 700; /* 굵은 두께, 보통보다 두꺼움 */
+  font-style: normal; /* 일반 스타일, 기울기 없음 */
+}
+
 html, body, * {
-    font-family: 'pretendard', sans-serif !important;  /* 전체 폰트를 pretendard로 설정 */
-  }
+  font-family: 'SUIT', sans-serif !important; /* 기본 폰트로 SUIT 적용, 없으면 산세리프 대체 */
+}
 
 /* =============================
-   📌 STEP 3: 질문 화면 스타일
+   ✅ STEP 1: 상단 진행 바 영역
 ============================= */
-/* ✅ 1. 버튼 간격 & 크기 개선 */
-.audio-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-    margin-bottom: 1rem;
+.progress-container {
+  position: relative;                   /* 고정 해제! */
+  top: auto;                            /* 고정 좌표 제거 */
+  margin: 5rem auto;                    /* 위 여백 주고 가운데 정렬 */
+  width: 60%;                           /* 전체 폭의 60% */
+  height: 0.3rem;                       /* 얇은 사각형 형태 */
+  border-radius: 0.3125rem;             /* 양 끝 라운드 처리 */
+  background-color: #e0e0e0;          /* 연한 회색 배경 */
+  overflow: hidden;                     /* 내부 progress가 튀어나오지 않게 */
+  z-index: 9999;                        /* 다른 요소 위에 뜨도록 설정 */
+}
+
+.progress-bar {
+  position: absolute;
+  width: 0%;                              /* 초기값 설정! */
+  height: 100%;                           /* 컨테이너 높이에 맞게 꽉 채움 */
+  background-color: #3c3c3c;            /* 진한 회색 진행바 */
+  border-radius: 0.3125rem;               /* 양 끝 둥글게 */
+  transition: width 0.3s ease-in-out;     /* 너비 전환 애니메이션 효과 */
+  z-index: 1;
+}
+
+/* =============================
+   ✅ STEP 2: 질문 출력 영역
+============================= */
+.question-number {
+  margin-top: 8rem;
+  font-weight: 600;                  /* 약간 굵은 글씨 */
+  margin-bottom: 0.5rem;             /* 아래쪽 여백 0.5rem */
+  color: #444;                     /* 중간 회색 텍스트 색상 */
+  text-align: center;                /* 텍스트 가운데 정렬 */
+}
+
+.question-text {
+  display: block !important;          /* 블록 요소로 강제 표시 */
+  margin-top: 5rem;
+  opacity: 1 !important;              /* 완전 불투명 */
+  visibility: visible !important;     /* 요소가 보임 상태 */
+  color: #3c3c3c !important;        /* 짙은 회색 텍스트 색상 */
+  font-weight: 700;                   /* 굵은 글씨 */
+  font-size: 1.4rem;                  /* 글자 크기 */
+  text-align: center;                 /* 텍스트 가운데 정렬 */
+  margin-bottom: 1rem;                /* 아래쪽 여백 1rem (상대 단위) */
+}
+
+/* =============================
+   ✅ STEP 3: 체크박스 선택지 영역
+============================= */
+.checkbox-group {
+  display: flex;
+  margin-top: 7rem;
+  justify-content: center;            /* 수평 중앙 정렬 */
+  gap: 6rem;                          /* 항목 사이 여백 */
+  text-align: center;                 /* 텍스트까지 중앙 정렬 */
+}
+.checkbox-group label {
+  font-size: 1.2rem;
+  display: flex;                  /* 플렉스 박스로 배치 */
+  align-items: center;            /* 수직 중앙 정렬 */
+  gap: 0.5rem;                    /* 텍스트와 체크박스 사이 0.5rem 간격 */
+  font-weight: 500;               /* 보통보다 약간 굵은 글씨 */
+  color: #595959;               /* 짙은 회색 텍스트 색상 */
+}
+.checkbox-group input[type="checkbox"]:checked + label {
+  font-weight: bold;              /* 선택 시 글씨 굵게 */
+  color: #5d8695;               /* 선택 시 청회색 계열 색상 */
+}
+
+/* =============================
+   ✅ STEP 4: STT 결과 출력 영역
+============================= */
+.response-text {
+  display: block;
+  font-size: 1.2rem;
+  margin-top: 6rem;
+  font-weight: 500;
+  color: #333;
+  text-align: center;
+}
+
+
+/* =============================
+   ✅ STEP 5: 제어 버튼 영역 (오디오 + 진단)
+============================= */
+.diagnosis-controls {
+  display: flex;                  /* 플렉스 박스로 배치 */
+  margin-top: 7rem;
+  flex-wrap: wrap;                /* 줄 바꿈 허용 */
+  justify-content: center;        /* 중앙 정렬 */
+  gap: 5rem;                     /* 버튼 사이 10픽셀 간격 */
+}
+
+.diagnosis-controls button {
+  background-color: #EAEAEA;      /* 연한 회색 배경 */
+  color: #606060;                /* 짙은 회색 텍스트 */
+  border: none;                  /* 테두리 없음 */
+  padding: 0.5rem 0.8rem;            /* 상하 10px, 좌우 16px 여백 */
+  font-size: 0.875rem;               /* 글자 크기 14픽셀 */
+  border-radius: 0.25rem;            /* 모서리 둥글게 4px */
+  cursor: pointer;               /* 마우스 포인터 변경 */
+}
+
+.diagnosis-controls button:hover {
+  background-color: #e2e2e2;      /* 마우스 오버 시 청회색 배경 */
+}
+
+
+/* =============================
+   ✅ STEP 6: 반응형 스타일 (Responsive)
+============================= */
+@media (max-width: 768px) {
+  .progress-container {
+    width: 90%;                  /* 모바일에서 폭을 더 넓게 */
+    top: 1rem;                   /* 상단 위치 살짝 조정 */
   }
-  
-  .audio-controls button {
-    background-color: #5d8695;
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    font-size: 14px;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  .audio-controls button:hover {
-    background-color: #466b78; /* 호버 색상 추가 */
-  }
-  
-  
-  /* ✅ 2. 질문 영역 강조 */
+
   .question-text {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    color: #000 !important;
-    z-index: 9999 !important;
+    font-size: 1rem;             /* 질문 텍스트 크기 줄임 */
   }
-  
-  
-  /* ✅ 3. STT 결과 시각 강화 */
-  .stt-result {
-    font-size: 16px;
-    margin-bottom: 1rem;
-    text-align: center;
+
+  .question-number {
+    font-size: 1.125rem;             /* 번호 텍스트 크기 줄임 */
   }
-  
-  /* ✅ 4. 체크박스 + 라벨을 보기 좋게 */
-  .answer-options {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    margin-top: 1rem;
+
+  .checkbox-group {
+    font-size: 0.875rem;             /* 선택지 글씨도 조금 작게 */
   }
-  
-  .answer-options input[type="checkbox"]:checked + label {
-    font-weight: bold;
-    color: #5d8695;
+
+  .diagnosis-controls button {
+    font-size: 0.75rem;             /* 버튼 글자 작게 */
+    padding: 0.5rem 0.75rem;           /* 버튼 여백도 축소 */
   }
+}

@@ -8,12 +8,14 @@
 <body>
   <div id="diagnosis-ui">
 
-    <!-- 상단 타이틀 -->
-    <h2 class="diagnosis-title">ADHD 음성 진단 시스템</h2>
+    <!-- 진행 바 -->
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
 
     <!-- 현재 문항 출력 -->
     <div class="question-container">
-      <div id="question-number" class="question-number">문제 1</div>
+      <div id="question-number" class="question-number"></div>
       <div id="question" class="question-text">문제가 여기에 표시됩니다.</div>
     </div>
 
@@ -27,8 +29,7 @@
 
     <!-- 인식된 응답 표시 -->
     <div class="response-container">
-      <p class="response-label">🗣️ 인식된 응답 :</p>
-      <p id="responseText" class="response-text">여기에 표시됩니다.</p>
+      <span id="responseText" class="response-text"></span>
     </div>
 
     <!-- 제어 버튼 영역 -->

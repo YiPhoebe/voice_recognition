@@ -1,7 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
+
   const questionEl = document.getElementById("question");
   const questionNumberEl = document.getElementById("question-number");
   const responseEl = document.getElementById("responseText");
+
+  const progressBar = document.getElementById("progressBar");
 
   const checkboxEls = [
     document.getElementById("checkbox-1"),
@@ -39,14 +42,20 @@ document.addEventListener("DOMContentLoaded", () => {
     // 사용자 이름 치환
     const username = sessionStorage.getItem("username") || "사용자";
     const personalizedText = text.replace("{name}", username);
-    questionEl.textContent = personalizedText;
-    questionNumberEl.textContent = `문제 ${currentQuestionIndex + 1}`;
+    const ttsText = `문제 ${currentQuestionIndex + 1}. ${personalizedText}`;
+    questionEl.textContent = ttsText;
+    // 서버에 TTS 재생용 텍스트 전송
+    ws.send(JSON.stringify({ type: "tts", text: ttsText }));
     responseEl.textContent = "🗣️ 응답을 기다리는 중...";
     checkboxEls.forEach(cb => cb.checked = false);
+    // Update progress bar
+    const totalQuestions = questions.length || 20; // Fallback if questions not initialized
+    const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
+    progressBar.style.width = `${progress}%`;
   }
 
   function handleResponse(text) {
-    responseEl.textContent = `🗣️ 인식된 답변: ${text}`;
+    responseEl.textContent = text;
 
     const scoreMap = {
       1: ["1", "일", "전혀", "1점"],
