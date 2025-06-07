@@ -30,6 +30,19 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (data.type === "response") {
       console.log("✅ handleResponse 호출 준비됨!");
       handleResponse(data.text);
+    } else if (data.type === "end") {
+      console.log("🎉 서버에서 모든 질문 완료 신호 받음");
+
+      const resultButton = document.getElementById("result-button");
+      if (resultButton) {
+        resultButton.classList.remove("hidden");
+        resultButton.classList.add("fade-text-fixed");
+        resultButton.style.opacity = "1";
+
+        resultButton.addEventListener("click", () => {
+          window.location.href = "/static/js/result.js";
+        });
+      }
     }
   }
 
@@ -151,6 +164,17 @@ document.addEventListener("DOMContentLoaded", () => {
         showQuestion(questions[currentQuestionIndex]);
       } else {
         console.log("✅ 모든 질문 완료");
+
+        const resultButton = document.getElementById("result-button");
+        if (resultButton) {
+          resultButton.classList.remove("hidden");
+          resultButton.classList.add("fade-text-fixed");
+          resultButton.style.opacity = "1";
+
+          resultButton.addEventListener("click", () => {
+            window.location.href = "/static/js/result.js";
+          });
+        }
       }
     }, 1000);
   }
