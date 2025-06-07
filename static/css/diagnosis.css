@@ -78,18 +78,43 @@ html, body, * {
   justify-content: center;            /* 수평 중앙 정렬 */
   gap: 6rem;                          /* 항목 사이 여백 */
   text-align: center;                 /* 텍스트까지 중앙 정렬 */
+  align-items: center;                /* 체크박스와 텍스트 수직 가운데 정렬 */
+}
+
+/* Ensure each checkbox-label pair aligns horizontally */
+.checkbox-group div {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 .checkbox-group label {
   font-size: 1.2rem;
   display: flex;                  /* 플렉스 박스로 배치 */
-  align-items: center;            /* 수직 중앙 정렬 */
-  gap: 0.5rem;                    /* 텍스트와 체크박스 사이 0.5rem 간격 */
+  gap: 0.8rem;                    /* 텍스트와 체크박스 사이 0.5rem 간격 */
   font-weight: 500;               /* 보통보다 약간 굵은 글씨 */
   color: #595959;               /* 짙은 회색 텍스트 색상 */
+  align-items: center;  /* 수직 가운데 정렬 */
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
 }
 .checkbox-group input[type="checkbox"]:checked + label {
   font-weight: bold;              /* 선택 시 글씨 굵게 */
-  color: #5d8695;               /* 선택 시 청회색 계열 색상 */
+  color: #363636;               /* 선택 시 청회색 계열 색상 */
+}
+
+/* ✅ 사용자는 클릭 못하게, 스타일은 유지되도록 */
+.checkbox-group input[type="checkbox"].locked {
+  pointer-events: none;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.checkbox-group input[type="checkbox"]:checked {
+  accent-color: #363636;
+  border-radius: 4px;
 }
 
 /* =============================

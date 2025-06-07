@@ -3,6 +3,7 @@ from utils import stt  # stt.py 모듈 import
 from fastapi.responses import JSONResponse
 import requests
 from io import BytesIO
+import asyncio
 
 
 app = FastAPI()
@@ -73,8 +74,62 @@ import json
 
 @app.websocket("/ws/adhd-short")
 async def adhd_short_ws(websocket: WebSocket):
+    print("🌀 WebSocket 접속 시도됨")
     await websocket.accept()
+    print("✅ WebSocket 연결 완료")
+
     with open("static/questions_list.json", "r", encoding="utf-8") as f:
         questions = json.load(f)
     await websocket.send_json({"type": "init", "questions": questions})
     await websocket.send_json({"type": "question", "text": questions[0]["text"]})
+    print("📤 질문 전송됨")
+
+    websocket.state.current_index = 0
+
+    while True:
+        try:
+            print("🧭 메시지 수신 대기 중...")
+            data = await websocket.receive_json()
+            print("📩 받은 데이터:", data)
+            if data.get("type") == "response":
+                text = data.get("text", "")
+                print("📥 응답 수신:", text)
+
+                current_index = websocket.state.current_index
+                next_index = current_index + 1
+
+                if next_index < len(questions):
+                    await websocket.send_json({
+                        "type": "question",
+                        "text": questions[next_index]["text"].replace("{name}", "사용자"),
+                        "index": next_index
+                    })
+                    websocket.state.current_index += 1
+                    print(f"📤 다음 질문 전송: {questions[next_index]['text']}")
+                else:
+                    await websocket.send_json({
+                        "type": "end",
+                        "message": "모든 질문이 완료되었습니다."
+                    })
+                    print("🏁 모든 질문 완료")
+            elif data.get("type") == "skip":
+                current_index = websocket.state.current_index
+                next_index = current_index + 1
+
+                if next_index < len(questions):
+                    await websocket.send_json({
+                        "type": "question",
+                        "text": questions[next_index]["text"].replace("{name}", "사용자"),
+                        "index": next_index
+                    })
+                    websocket.state.current_index += 1
+                    print(f"📤 [SKIP] 다음 질문 전송: {questions[next_index]['text']}")
+                else:
+                    await websocket.send_json({
+                        "type": "end",
+                        "message": "모든 질문이 완료되었습니다."
+                    })
+                    print("🏁 [SKIP] 모든 질문 완료")
+        except Exception as e:
+            print("❌ WebSocket error:", e)
+            break

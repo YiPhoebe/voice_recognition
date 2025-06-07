@@ -12,38 +12,57 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("checkbox-3"),
     document.getElementById("checkbox-4"),
   ];
+  window.checkboxEls = checkboxEls;
 
-  const ws = new WebSocket(`ws://${location.host}/ws/adhd-short`);
+  checkboxEls.forEach(cb => {
+    cb.checked = false;
+    cb.classList.add("locked");
+  });
 
-  let currentQuestionIndex = 0;
-  let questions = [];
-
-  ws.onopen = () => {
-    console.log("✅ WebSocket 연결됨");
-    // 사용자 이름을 sessionStorage에서 받아서 서버에 전달
-    const username = sessionStorage.getItem("username") || "사용자";
-    ws.send(JSON.stringify({ type: "start", username }));
-  };
-
-  ws.onmessage = (event) => {
+  function handleSocketMessage(event) {
     const data = JSON.parse(event.data);
+    console.log("📥 서버 응답 도착:", data);
 
     if (data.type === "init") {
       questions = data.questions;
     } else if (data.type === "question") {
       showQuestion(data.text);
     } else if (data.type === "response") {
+      console.log("✅ handleResponse 호출 준비됨!");
       handleResponse(data.text);
     }
+  }
+
+  const socket = new WebSocket(`ws://${location.host}/ws/adhd-short`);
+  socket.onmessage = handleSocketMessage;
+
+  let currentQuestionIndex = 0;
+  let questions = [];
+
+  socket.onopen = () => {
+    console.log("✅ WebSocket 연결됨");
+    // 사용자 이름을 sessionStorage에서 받아서 서버에 전달
+    const username = sessionStorage.getItem("username") || "사용자";
+    socket.send(JSON.stringify({ type: "start", username }));
   };
+
+  function convertToKoreanNumber(n) {
+    const digit = ["", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구"];
+    if (n <= 9) return digit[n];
+    if (n === 10) return "십";
+    if (n < 20) return "십" + digit[n % 10];
+    if (n === 20) return "이십";
+    return n.toString(); // fallback
+  }
 
   function showQuestion(text, increment = true, questionNumber = null) {
     // 사용자 이름 치환
     const username = sessionStorage.getItem("username") || "사용자";
     const personalizedText = text.replace("{name}", username);
     const numberToUse = questionNumber ?? currentQuestionIndex + 1;
-    const ttsText = `문제 ${numberToUse}. ${personalizedText}`;
-    questionEl.textContent = ttsText;
+    const nativeNumber = convertToKoreanNumber(numberToUse);
+    const ttsText = `문제 ${nativeNumber}번. ${personalizedText}`;
+    questionEl.textContent = `문제 ${numberToUse}. ${personalizedText}`;
     // 서버에 TTS 재생용 텍스트 전송 및 오디오 재생
     console.log("📤 TTS 요청 보냄:", ttsText);
     const backendUrl = "http://localhost:10081/synthesize";
@@ -68,7 +87,9 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch(err => {
         console.error("🔴 TTS fetch 오류:", err);
       });
-    responseEl.textContent = "🗣️ 응답을 기다리는 중...";
+    window.requestAnimationFrame(() => {
+      responseEl.textContent = "🗣️ 응답을 기다리는 중...";
+    });
     checkboxEls.forEach(cb => cb.checked = false);
     // Update progress bar
     const totalQuestions = questions.length || 20; // Fallback if questions not initialized
@@ -78,23 +99,60 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleResponse(text) {
-    responseEl.textContent = text;
+    window.requestAnimationFrame(() => {
+      responseEl.textContent = text;
+      responseEl.style.opacity = 1;
+    });
 
     const scoreMap = {
-      1: ["1", "일", "전혀", "1점"],
-      2: ["2", "이", "약간", "2점"],
-      3: ["3", "삼", "꽤", "3점"],
-      4: ["4", "사", "아주", "4점"],
+      1: ["전혀 그렇지 않다", "1번", "일번", "1", "일"],
+      2: ["약간 그렇다", "2번", "이번", "2", "이"],
+      3: ["꽤 그렇다", "3번", "삼번", "3", "삼"],
+      4: ["아주 많이 그렇다", "4번", "사번", "4", "사"],
     };
 
-    const normalized = text.trim();
-    for (let [val, keywords] of Object.entries(scoreMap)) {
-      if (keywords.some(k => normalized.includes(k))) {
-        const idx = parseInt(val) - 1;
-        if (checkboxEls[idx]) checkboxEls[idx].checked = true;
+    const normalized = text.trim().toLowerCase().replace(/\s+/g, " ");
+    console.log("🧪 normalized (length " + normalized.length + "):", JSON.stringify(normalized));
+
+    // 🔎 DEBUG: Compare each keyword to normalized text in detail
+    for (const [score, keywords] of Object.entries(scoreMap)) {
+      for (const k of keywords) {
+        const nk = k.trim().toLowerCase().replace(/\s+/g, " ").replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "");
+        const normalizedForMatch = normalized.replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "");
+        const match = nk === normalizedForMatch;
+        console.log(`🔍 비교 [score ${score}]: "${nk}" === "${normalizedForMatch}" →`, match);
+      }
+    }
+
+    let matchScore = null;
+
+    for (const [score, keywords] of Object.entries(scoreMap)) {
+      if (keywords.some(k => k.trim().toLowerCase().replace(/\s+/g, " ") === normalized)) {
+        matchScore = parseInt(score);
         break;
       }
     }
+
+    if (matchScore !== null) {
+      const idx = matchScore - 1;
+      if (checkboxEls[idx]) {
+        checkboxEls[idx].checked = true;
+        checkboxEls[idx].classList.add("locked");
+        checkboxEls[idx].style.outline = "3px solid red"; // ✅ 시각 디버그 표시
+        console.log("✅ 체크박스", idx + 1, "강제 체크됨", checkboxEls[idx]);
+      } else {
+        console.warn("❌ 체크박스 null!", idx, matchScore);
+      }
+    } else {
+      console.warn("❌ 일치하는 응답 없음:", normalized);
+    }
+    setTimeout(() => {
+      if (currentQuestionIndex < questions.length) {
+        showQuestion(questions[currentQuestionIndex]);
+      } else {
+        console.log("✅ 모든 질문 완료");
+      }
+    }, 1000);
   }
 
   // 오디오 제어 함수들 - 클라이언트에서 직접 오디오 제어
@@ -133,7 +191,9 @@ document.addEventListener("DOMContentLoaded", () => {
       };
 
       mediaRecorder.onstop = () => {
+        console.log("🛑 녹음 종료됨");
         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        console.log("📦 녹음된 Blob 생성 완료:", audioBlob);
         sendAudioToSTT(audioBlob);
       };
 
@@ -150,15 +210,36 @@ document.addEventListener("DOMContentLoaded", () => {
     const formData = new FormData();
     formData.append("file", audioBlob, "recording.webm");
 
+    console.log("📨 FormData 준비 완료");
+    console.log("📤 STT 요청 전송 시작");
+
     fetch("/stt", {
       method: "POST",
       body: formData
     })
       .then(res => res.json())
       .then(data => {
+        console.log("📥 STT 응답 수신 완료");
         const text = data.text || "(응답 없음)";
+        console.log("📝 STT 텍스트 결과:", text);
+        
+        // 📝 응답을 sessionStorage에 임시 저장
+        let tempResponses = JSON.parse(sessionStorage.getItem("diagnosisResponses") || "[]");
+        tempResponses.push({ questionIndex: currentQuestionIndex, response: text });
+        sessionStorage.setItem("diagnosisResponses", JSON.stringify(tempResponses));
+
+        if (text === "[인식 실패]") {
+          console.warn("⚠️ 인식 실패 - 다음 질문으로 넘어갑니다");
+          socket.send(JSON.stringify({ type: "skip" }));
+          return;
+        }
         console.log("📝 STT 결과:", text);
-        ws.send(JSON.stringify({ type: "response", text }));
+        if (socket.readyState === WebSocket.OPEN) {
+          console.log("📡 WebSocket 상태 확인됨: OPEN → 응답 전송");
+          socket.send(JSON.stringify({ type: "response", text, currentIndex: currentQuestionIndex }));
+        } else {
+          console.warn("⚠️ WebSocket이 열려있지 않음 → 응답 전송 실패");
+        }
       })
       .catch(err => {
         console.error("🔴 STT 오류:", err);
@@ -188,6 +269,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  window.skipQuestion = () => ws.send(JSON.stringify({ type: "skip" }));
-  window.restartDiagnosis = () => ws.send(JSON.stringify({ type: "restart" }));
+  window.skipQuestion = () => socket.send(JSON.stringify({ type: "skip" }));
+  window.restartDiagnosis = () => socket.send(JSON.stringify({ type: "restart" }));
 });
