@@ -146,20 +146,29 @@ function visualizeWaveform(stream) {
       }
 
       async function onRecordingStop(stream) {
+        console.log("🛑 녹음 종료됨");
+
         const blob = new Blob(chunks, { type: 'audio/webm' });
+        console.log("📦 녹음된 Blob 생성 완료:", blob);
+
         const formData = new FormData();
         formData.append("file", blob, "recording.webm");
+        console.log("📨 FormData 준비 완료");
 
-        // Ensure sttResult and retryMessage exist
         const retryMessage = document.getElementById("retry-message");
 
         try {
+          console.log("📤 STT 요청 전송 시작");
           const response = await fetch("http://localhost:5981/stt", {
             method: "POST",
             body: formData,
           });
-          const resultText = await response.text();
-          // Always show the recognized answer text first, with delayed resultText
+          console.log("📥 STT 응답 수신 완료");
+
+          const json = await response.json();
+          const resultText = json.text;
+          console.log("📝 STT 텍스트 결과:", resultText);
+
           sttResult.textContent = "인식된 답변:";
           sttResult.classList.remove("hidden");
           sttResult.classList.add("fade-text-fixed");
@@ -169,7 +178,7 @@ function visualizeWaveform(stream) {
           }, 1000);
 
           if (resultText.trim() === "안녕하세요") {
-            // Hide the retry message if correct
+            console.log("✅ 정답 인식됨 - 다음 버튼 표시");
             if (retryMessage) {
               retryMessage.classList.add("hidden");
               retryMessage.classList.remove("fade-text-fixed");
@@ -178,19 +187,15 @@ function visualizeWaveform(stream) {
             button.classList.add("fade-text-fixed");
             button.style.opacity = "1";
           } else {
-            // Show the retry message if not correct
+            console.log("❗ 정답 아님 - 재녹음 시작");
             if (retryMessage) {
               retryMessage.classList.remove("hidden");
               retryMessage.classList.add("fade-text-fixed");
 
-                // ✅ [백업용] 파형 디졸브 처리 방식
-            
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            waveformContainer.classList.remove("hidden");
-            waveformContainer.classList.add("fade-text-fixed");
-            
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              waveformContainer.classList.remove("hidden");
+              waveformContainer.classList.add("fade-text-fixed");
             }
-            console.log("❗ 다시 녹음 시작");
             startRecording(stream);
           }
         } catch (err) {

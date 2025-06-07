@@ -19,11 +19,11 @@ app.add_middleware(
 
 from fastapi.responses import PlainTextResponse
 
-@app.post("/stt", response_class=PlainTextResponse)
+@app.post("/stt")
 async def speech_to_text(file: UploadFile = File(...)):
     audio_bytes = await file.read()
     result = stt.transcribe_audio(audio_bytes)
-    return result
+    return JSONResponse(content={"text": result})
 
 from fastapi.responses import StreamingResponse
 

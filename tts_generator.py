@@ -48,3 +48,34 @@ if __name__ == "__main__":
         generate_tts(q["text"], filename)
         if not os.path.exists(full_path):
             print(f"⚠️ 파일 생성 실패: {full_path}")
+def generate_tts_bytes(text: str) -> bytes:
+    print("🗣️ [TTS 요청 시작]", text)
+    try:
+        client = texttospeech.TextToSpeechClient()
+        synthesis_input = texttospeech.SynthesisInput(text=text)
+
+        voice = texttospeech.VoiceSelectionParams(
+            language_code="ko-KR",
+            name="ko-KR-Chirp3-HD-Despina"
+        )
+
+        audio_config = texttospeech.AudioConfig(
+            audio_encoding=texttospeech.AudioEncoding.MP3
+        )
+
+        response = client.synthesize_speech(
+            input=synthesis_input,
+            voice=voice,
+            audio_config=audio_config
+        )
+
+        if not response.audio_content:
+            print("❌ [TTS 실패] audio_content 비어 있음")
+            return b""
+
+        print(f"✅ [TTS 생성 완료] {len(response.audio_content)} bytes")
+        return response.audio_content
+
+    except Exception as e:
+        print("❌ [TTS 예외 발생]", e)
+        return b""
