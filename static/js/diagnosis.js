@@ -32,26 +32,39 @@ document.addEventListener("DOMContentLoaded", () => {
       questions = data.questions;
     } else if (data.type === "question") {
       showQuestion(data.text);
-      currentQuestionIndex++;
     } else if (data.type === "response") {
       handleResponse(data.text);
     }
   };
 
-  function showQuestion(text) {
+  function showQuestion(text, increment = true, questionNumber = null) {
     // 사용자 이름 치환
     const username = sessionStorage.getItem("username") || "사용자";
     const personalizedText = text.replace("{name}", username);
-    const ttsText = `문제 ${currentQuestionIndex + 1}. ${personalizedText}`;
+    const numberToUse = questionNumber ?? currentQuestionIndex + 1;
+    const ttsText = `문제 ${numberToUse}. ${personalizedText}`;
     questionEl.textContent = ttsText;
-    // 서버에 TTS 재생용 텍스트 전송
-    ws.send(JSON.stringify({ type: "tts", text: ttsText }));
+    // 서버에 TTS 재생용 텍스트 전송 및 오디오 재생
+    fetch("/synthesize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: ttsText })
+    })
+      .then(res => res.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        playAudio(url);
+      })
+      .catch(err => {
+        console.error("🔴 TTS fetch 오류:", err);
+      });
     responseEl.textContent = "🗣️ 응답을 기다리는 중...";
     checkboxEls.forEach(cb => cb.checked = false);
     // Update progress bar
     const totalQuestions = questions.length || 20; // Fallback if questions not initialized
     const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
     progressBar.style.width = `${progress}%`;
+    if (increment) currentQuestionIndex++;
   }
 
   function handleResponse(text) {
@@ -74,10 +87,37 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 오디오 제어 함수들
-  window.pauseAudio = () => ws.send("pause");
-  window.resumeAudio = () => ws.send("resume");
-  window.replayAudio = () => ws.send("replay");
-  window.skipQuestion = () => ws.send("skip");
-  window.restartDiagnosis = () => ws.send("restart");
+  // 오디오 제어 함수들 - 클라이언트에서 직접 오디오 제어
+  let currentAudio = null;
+
+  window.playAudio = (url) => {
+    if (currentAudio) currentAudio.pause();
+    currentAudio = new Audio(url);
+    currentAudio.play()
+      .then(() => {
+        console.log("▶️ 오디오 재생 시작:", url);
+      })
+      .catch((err) => {
+        console.warn("⛔ 오디오 자동 재생 차단됨. 사용자 상호작용 필요:", err);
+      });
+  };
+
+  window.pauseAudio = () => {
+    if (currentAudio) currentAudio.pause();
+    console.log("⏸️ 오디오 일시정지");
+  };
+  window.resumeAudio = () => {
+    if (currentAudio) currentAudio.play();
+    console.log("▶️ 오디오 이어 재생");
+  };
+  window.replayAudio = () => {
+    const q = questions[currentQuestionIndex - 1];
+    if (q && typeof q.text === "string") {
+      showQuestion(q.text, false, q.id);
+      console.log("🔁 오디오 다시 재생 (질문 다시 요청)");
+    }
+  };
+
+  window.skipQuestion = () => ws.send(JSON.stringify({ type: "skip" }));
+  window.restartDiagnosis = () => ws.send(JSON.stringify({ type: "restart" }));
 });

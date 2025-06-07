@@ -1,6 +1,3 @@
-
-
-
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import os, uuid, shutil, asyncio, json
 from pydub import AudioSegment
@@ -59,6 +56,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     retry_count = 0
                     await send_question()
                     continue
+
 
             elif "bytes" in message:
                 audio_data = message["bytes"]
