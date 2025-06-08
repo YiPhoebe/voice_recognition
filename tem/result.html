@@ -1,0 +1,32 @@
+
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>ADHD 자가진단 결과</title>
+  <link rel="stylesheet" href="/static/css/result.css" />
+</head>
+<body>
+  <div id="result-container">
+    <h1>자가진단 결과</h1>
+    <p id="summary-text">결과를 불러오는 중입니다...</p>
+
+    <div id="score-box">
+      <h2>총 점수: <span id="total-score">0</span>점</h2>
+    </div>
+
+    <div id="email-section">
+      <label for="email-input"></label><br>
+      <input type="email" id="email-input" placeholder="이메일을 입력하세요" value="" />
+    </div>
+
+    <div id="share-buttons">
+      <button id="copy-button">결과 링크 복사</button>
+      <button id="email-button">이메일로 결과 보내기</button>
+    </div>
+  </div>
+
+  <script src="/static/js/result.js"></script>
+</body>
+</html>

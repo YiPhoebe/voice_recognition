@@ -27,7 +27,7 @@ html, body, * {
 .progress-container {
   position: relative;                   /* 고정 해제! */
   top: auto;                            /* 고정 좌표 제거 */
-  margin: 3rem auto;                    /* 위 여백 주고 가운데 정렬 */
+  margin: 4rem auto;                    /* 위 여백 주고 가운데 정렬 */
   width: 60%;                           /* 전체 폭의 60% */
   height: 0.3rem;                       /* 얇은 사각형 형태 */
   border-radius: 0.3125rem;             /* 양 끝 라운드 처리 */
@@ -50,7 +50,7 @@ html, body, * {
    ✅ STEP 2: 질문 출력 영역
 ============================= */
 .question-number {
-  margin-top: 6rem;
+  margin-top: 7rem;
   font-weight: 600;                  /* 약간 굵은 글씨 */
   margin-bottom: 0.5rem;             /* 아래쪽 여백 0.5rem */
   color: #444;                     /* 중간 회색 텍스트 색상 */
@@ -74,7 +74,7 @@ html, body, * {
 ============================= */
 .checkbox-group {
   display: flex;
-  margin-top: 7rem;
+  margin-top: 6.5rem;
   justify-content: center;            /* 수평 중앙 정렬 */
   gap: 6rem;                          /* 항목 사이 여백 */
   text-align: center;                 /* 텍스트까지 중앙 정렬 */
@@ -123,7 +123,7 @@ html, body, * {
 #responseText {
   display: block;
   font-size: 1.2rem;
-  margin-top: 6rem;
+  margin-top: 5rem;
   font-weight: 500;
   color: #333;
   text-align: center;
@@ -137,7 +137,7 @@ html, body, * {
 ============================= */
 .diagnosis-controls {
   display: flex;                  /* 플렉스 박스로 배치 */
-  margin-top: 7rem;
+  margin-top: 6rem;
   flex-wrap: wrap;                /* 줄 바꿈 허용 */
   justify-content: center;        /* 중앙 정렬 */
   gap: 5rem;                     /* 버튼 사이 10픽셀 간격 */

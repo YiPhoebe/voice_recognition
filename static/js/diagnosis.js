@@ -29,7 +29,8 @@ document.addEventListener("DOMContentLoaded", () => {
       showQuestion(data.text);
     } else if (data.type === "response") {
       console.log("✅ handleResponse 호출 준비됨!");
-      handleResponse(data.text);
+      const actualText = typeof data.text === "object" && data.text.text ? data.text.text : data.text;
+      handleResponse(actualText);
     } else if (data.type === "end") {
       console.log("🎉 서버에서 모든 질문 완료 신호 받음");
 
@@ -40,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
         resultButton.style.opacity = "1";
 
         resultButton.addEventListener("click", () => {
-          window.location.href = "/static/js/result.js";
+          window.location.href = "/result";
         });
       }
     }
@@ -111,6 +112,36 @@ document.addEventListener("DOMContentLoaded", () => {
     if (increment) currentQuestionIndex++;
   }
 
+  function handleScoring(matchScore) {
+    console.log("🧩 handleScoring() 들어옴:", matchScore);
+    try {
+      if (matchScore === null) {
+        console.log(`⚠️ 점수 없음 (질문 ${currentQuestionIndex}) → 누적 제외`);
+        return;
+      }
+
+      const normalizedAnswer = sessionStorage.getItem("latestNormalized") || "(없음)";
+      const currentRecords = JSON.parse(sessionStorage.getItem("scoreRecords") || "[]");
+
+      currentRecords.push({
+        question: currentQuestionIndex,
+        score: matchScore,
+        answer: normalizedAnswer
+      });
+
+      sessionStorage.setItem("scoreRecords", JSON.stringify(currentRecords));
+
+      const totalScore = currentRecords.reduce((acc, item) => acc + item.score, 0);
+      sessionStorage.setItem("totalScore", totalScore);
+
+      console.log(`📊 질문 ${currentQuestionIndex}번 점수:`, matchScore);
+      console.log("📜 기록된 응답 목록:", currentRecords);
+      console.log("🎯 총합 점수:", totalScore);
+    } catch (err) {
+      console.error("🔥 handleScoring 내부 오류:", err);
+    }
+  }
+
   function handleResponse(text) {
     window.requestAnimationFrame(() => {
       responseEl.textContent = text;
@@ -118,19 +149,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const scoreMap = {
-      1: ["전혀 그렇지 않다", "1번", "일번", "1", "일"],
-      2: ["약간 그렇다", "2번", "이번", "2", "이"],
-      3: ["꽤 그렇다", "3번", "삼번", "3", "삼"],
-      4: ["아주 많이 그렇다", "4번", "사번", "4", "사"],
+      1: ["전혀 그렇지 않다", "1번", "일번", "1", "일", "아니요", "노"],
+      2: ["약간 그렇다", "2번", "이번", "2", "이", "조금", "그런 편", "그렇다"],
+      3: ["꽤 그렇다", "3번", "삼번", "3", "삼", "보통", "중간"],
+      4: ["아주 많이 그렇다", "4번", "사번", "4", "사", "매우", "완전 그렇다"]
     };
 
-    const normalized = text.trim().toLowerCase().replace(/\s+/g, " ");
+    const normalized = text.trim().toLowerCase().replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "").replace(/\s+/g, " ");
+    sessionStorage.setItem("latestNormalized", normalized);
     console.log("🧪 normalized (length " + normalized.length + "):", JSON.stringify(normalized));
+    console.log(`🔢 현재 질문 번호: ${currentQuestionIndex}`);
 
     // 🔎 DEBUG: Compare each keyword to normalized text in detail
     for (const [score, keywords] of Object.entries(scoreMap)) {
       for (const k of keywords) {
-        const nk = k.trim().toLowerCase().replace(/\s+/g, " ").replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "");
+        const nk = k.trim().toLowerCase().replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "").replace(/\s+/g, " ");
         const normalizedForMatch = normalized.replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "");
         const match = nk === normalizedForMatch;
         console.log(`🔍 비교 [score ${score}]: "${nk}" === "${normalizedForMatch}" →`, match);
@@ -140,13 +173,27 @@ document.addEventListener("DOMContentLoaded", () => {
     let matchScore = null;
 
     for (const [score, keywords] of Object.entries(scoreMap)) {
-      if (keywords.some(k => k.trim().toLowerCase().replace(/\s+/g, " ") === normalized)) {
-        matchScore = parseInt(score);
-        break;
+      for (const keyword of keywords) {
+        const normKeyword = keyword.trim().toLowerCase().replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "").replace(/\s+/g, " ");
+        const normInput = normalized;
+
+        if (normKeyword === normInput) {
+          matchScore = parseInt(score);
+          break;
+        }
+
+        // 💡 부분 포함 허용
+        if (normInput.includes(normKeyword)) {
+          matchScore = parseInt(score);
+          console.log(`🧩 부분 일치 "${normKeyword}" 포함됨 → 점수 ${matchScore}`);
+          break;
+        }
       }
+      if (matchScore !== null) break;
     }
 
     if (matchScore !== null) {
+      console.log(`✅ 응답 "${normalized}" → 점수 ${matchScore} 매칭 완료`);
       const idx = matchScore - 1;
       if (checkboxEls[idx]) {
         checkboxEls[idx].checked = true;
@@ -160,6 +207,9 @@ document.addEventListener("DOMContentLoaded", () => {
       console.warn("❌ 일치하는 응답 없음:", normalized);
     }
     setTimeout(() => {
+      console.log("📌 matchScore 최종값:", matchScore);
+      handleScoring(matchScore);
+
       if (currentQuestionIndex < questions.length) {
         showQuestion(questions[currentQuestionIndex]);
       } else {
@@ -172,7 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
           resultButton.style.opacity = "1";
 
           resultButton.addEventListener("click", () => {
-            window.location.href = "/static/js/result.js";
+            window.location.href = "/result";
           });
         }
       }
@@ -243,6 +293,8 @@ document.addEventListener("DOMContentLoaded", () => {
     })
       .then(res => res.json())
       .then(data => {
+        const raw = data.raw || null; // 🔍 원본 출력용
+        console.log("📝 STT 원본 응답(raw):", raw);   // 🔥 추가 로그
         console.log("📥 STT 응답 수신 완료");
         const text = data.text || "(응답 없음)";
         console.log("📝 STT 텍스트 결과:", text);
@@ -253,14 +305,15 @@ document.addEventListener("DOMContentLoaded", () => {
         sessionStorage.setItem("diagnosisResponses", JSON.stringify(tempResponses));
 
         if (text === "[인식 실패]") {
-          console.warn("⚠️ 인식 실패 - 다음 질문으로 넘어갑니다");
-          socket.send(JSON.stringify({ type: "skip" }));
+          console.warn("⚠️ 인식 실패 - 다음 질문으로 넘어갑니다 (점수 없음)");
+          handleResponse("[인식 실패]");
           return;
         }
         console.log("📝 STT 결과:", text);
         if (socket.readyState === WebSocket.OPEN) {
           console.log("📡 WebSocket 상태 확인됨: OPEN → 응답 전송");
-          socket.send(JSON.stringify({ type: "response", text, currentIndex: currentQuestionIndex }));
+          const finalText = typeof text === "object" && text.text ? text.text : text;
+          socket.send(JSON.stringify({ type: "response", text: finalText, currentIndex: currentQuestionIndex }));
         } else {
           console.warn("⚠️ WebSocket이 열려있지 않음 → 응답 전송 실패");
         }

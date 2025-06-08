@@ -19,12 +19,20 @@ app.add_middleware(
 )
 
 from fastapi.responses import PlainTextResponse
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
+# Add send_email router import
+from routers import send_email
 
 @app.post("/stt")
 async def speech_to_text(file: UploadFile = File(...)):
     audio_bytes = await file.read()
     result = stt.transcribe_audio(audio_bytes)
-    return JSONResponse(content={"text": result})
+    return JSONResponse(content={
+        "text": result,
+        "raw": result
+    })
 
 from fastapi.responses import StreamingResponse
 
@@ -69,6 +77,12 @@ def diagnosis():
 from fastapi.staticfiles import StaticFiles
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Jinja2 template engine
+templates = Jinja2Templates(directory="tem")
+
+# Include the send_email router
+app.include_router(send_email.router)
+
 from fastapi import WebSocket
 import json
 
@@ -91,6 +105,7 @@ async def adhd_short_ws(websocket: WebSocket):
             print("🧭 메시지 수신 대기 중...")
             data = await websocket.receive_json()
             print("📩 받은 데이터:", data)
+            await asyncio.sleep(0.5)
             if data.get("type") == "response":
                 text = data.get("text", "")
                 print("📥 응답 수신:", text)
@@ -107,6 +122,7 @@ async def adhd_short_ws(websocket: WebSocket):
                     websocket.state.current_index += 1
                     print(f"📤 다음 질문 전송: {questions[next_index]['text']}")
                 else:
+                    await asyncio.sleep(1)
                     await websocket.send_json({
                         "type": "end",
                         "message": "모든 질문이 완료되었습니다."
@@ -125,6 +141,7 @@ async def adhd_short_ws(websocket: WebSocket):
                     websocket.state.current_index += 1
                     print(f"📤 [SKIP] 다음 질문 전송: {questions[next_index]['text']}")
                 else:
+                    await asyncio.sleep(1)
                     await websocket.send_json({
                         "type": "end",
                         "message": "모든 질문이 완료되었습니다."
@@ -133,3 +150,9 @@ async def adhd_short_ws(websocket: WebSocket):
         except Exception as e:
             print("❌ WebSocket error:", e)
             break
+
+
+# Serve the result page using Jinja2 template
+@app.get("/result", response_class=HTMLResponse)
+async def show_result_page(request: Request):
+    return templates.TemplateResponse("result.html", {"request": request})

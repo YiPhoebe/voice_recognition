@@ -130,7 +130,11 @@ function visualizeWaveform(stream) {
   (async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      visualizeWaveform(stream);
+
+      // 🟡 TTS 재생 먼저 완료 후 waveform + 녹음 실행
+      await playTTSSequentially([...group1Lines, ...group2Lines]);
+
+      visualizeWaveform(stream);  // TTS 끝난 뒤 파형 그리기 시작
 
       let recorder;
       let chunks = [];
@@ -166,7 +170,12 @@ function visualizeWaveform(stream) {
           console.log("📥 STT 응답 수신 완료");
 
           const json = await response.json();
-          const resultText = json.text;
+          console.log("🧪 원본 STT 응답:", json);
+
+          let resultText = "[인식 실패]";
+          if (json && json.text && typeof json.text.text === "string" && json.text.text.trim().length > 0) {
+            resultText = json.text.text.trim().replace(/[^\p{L}]/gu, "");
+          }
           console.log("📝 STT 텍스트 결과:", resultText);
 
           sttResult.textContent = "인식된 답변:";
@@ -177,7 +186,28 @@ function visualizeWaveform(stream) {
             sttResult.textContent += " " + resultText;
           }, 1000);
 
-          if (resultText.trim() === "안녕하세요") {
+          function levenshtein(a, b) {
+            const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+            for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+            for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+
+            for (let i = 1; i <= a.length; i++) {
+              for (let j = 1; j <= b.length; j++) {
+                dp[i][j] = Math.min(
+                  dp[i - 1][j] + 1,
+                  dp[i][j - 1] + 1,
+                  dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+                );
+              }
+            }
+            return dp[a.length][b.length];
+          }
+
+          const targetText = "안녕하세요";
+          const distance = levenshtein(resultText, targetText);
+          console.log("🎯 비교 대상:", resultText, "vs", targetText);
+          console.log("🧮 Levenshtein 거리:", distance);
+          if (distance <= 2 || resultText.includes("안녕하세요")) {
             console.log("✅ 정답 인식됨 - 다음 버튼 표시");
             if (retryMessage) {
               retryMessage.classList.add("hidden");
