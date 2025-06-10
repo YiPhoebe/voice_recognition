@@ -257,17 +257,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let matchScore = null;
 
+    // 1차: 정확히 일치하는 경우
     for (const [score, keywords] of Object.entries(scoreMap)) {
       for (const keyword of keywords) {
         const normKeyword = keyword.trim().toLowerCase().replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "").replace(/\s+/g, " ");
         const normInput = cleanedNormalized;
-
         if (normKeyword === cleanedNormalized) {
           matchScore = parseInt(score);
           break;
         }
       }
       if (matchScore !== null) break;
+    }
+
+    // 2차: "포함" 기준 부분 매칭 (정확 일치 없을 때)
+    if (matchScore === null) {
+      for (const [score, keywords] of Object.entries(scoreMap)) {
+        for (const keyword of keywords) {
+          if (cleanedNormalized.includes(keyword)) {
+            matchScore = parseInt(score);
+            console.log(`🧠 포함 매칭 성공! [score ${score}] → "${cleanedNormalized}" includes "${keyword}"`);
+            break;
+          }
+        }
+        if (matchScore !== null) break;
+      }
     }
 
     if (matchScore !== null) {

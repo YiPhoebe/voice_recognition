@@ -35,7 +35,8 @@ document.addEventListener("DOMContentLoaded", () => {
     sessionStorage.setItem("username", name);
 
     if (!email || !name || !gender || !year || !month || !day) {
-      alert("⚠️ 모든 항목을 입력하지 않았지만 테스트용으로 계속 진행합니다.");
+      alert("⚠️ 모든 항목을 입력해주세요.");
+      return;
     }
 
     window.location.href = "/intro";
