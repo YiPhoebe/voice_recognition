@@ -81,7 +81,7 @@ html, body, * {
   align-items: center;                /* 체크박스와 텍스트 수직 가운데 정렬 */
 }
 
-/* Ensure each checkbox-label pair aligns horizontally */
+/* ✅ 체크박스와 라벨이 옆으로 나란히 보이도록 정렬 */
 .checkbox-group div {
   display: flex;
   gap: 0.5rem;
@@ -113,8 +113,10 @@ html, body, * {
 }
 
 .checkbox-group input[type="checkbox"]:checked {
-  accent-color: #363636;
+  accent-color: #4099eb;
   border-radius: 4px;
+  box-shadow: 0 0 6px 2px rgba(54, 54, 54, 0.6);  /* ✅ 불빛처럼 glow */
+  transition: box-shadow 0.3s ease;
 }
 
 /* =============================

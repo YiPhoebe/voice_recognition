@@ -17,7 +17,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   button.style.opacity = "0";
   button.style.transition = "opacity 1s";
 
-  const backendUrl = "http://localhost:10081/synthesize";
+  // const backendUrl = "http://localhost:10081/synthesize";
+  const backendUrl = CONFIG.TTS_ENDPOINT;
 
   const groups = [
     document.querySelectorAll(".group-1"),

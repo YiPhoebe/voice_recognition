@@ -41,16 +41,20 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const diagnosisData = JSON.parse(localStorage.getItem("diagnosis_data") || "[]"); // 프론트 임시 저장 JSON
+    const payload = {
+      name: sessionStorage.getItem("username") || "",
+      email: email,
+      gender: sessionStorage.getItem("gender") || "",
+      birth: sessionStorage.getItem("birth") || "",
+      score: score,
+      summary: summary,
+      scores: JSON.parse(sessionStorage.getItem("scoreRecords") || "[]")
+    };
+
     fetch("/send_email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        score: score,
-        summary: summary,
-        email: email,
-        responses: diagnosisData  // 응답 전체를 함께 전송
-      })
+      body: JSON.stringify(payload)
     })
     .then(res => res.json())
     .then(data => {
@@ -58,6 +62,20 @@ window.addEventListener("DOMContentLoaded", () => {
     })
     .catch(() => {
       alert("이메일 전송 실패");
+    });
+
+    // 이메일 외에 결과 CSV 저장 요청
+    fetch("/save_result", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+      console.log("📁 결과 CSV 저장 완료:", data);
+    })
+    .catch(() => {
+      console.warn("⚠️ 결과 CSV 저장 실패");
     });
   });
 });

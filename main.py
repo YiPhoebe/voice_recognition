@@ -25,8 +25,9 @@ from fastapi.responses import PlainTextResponse
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-# Add send_email router import
+# Add send_email and save_result router imports
 from routers import send_email
+from routers import save_result
 
 @app.post("/stt")
 async def speech_to_text(file: UploadFile = File(...)):
@@ -57,7 +58,8 @@ async def synthesize(request: Request):
     data = await request.form()
     text = data.get("text", "")
     try:
-        tts_response = requests.post("http://192.168.3.19:10081/synthesize", data={"text": text})
+        tts_host = os.getenv("TTS_HOST", "http://localhost:10081")
+        tts_response = requests.post(f"{tts_host}/synthesize", data={"text": text})
         if tts_response.status_code != 200:
             raise Exception("TTS 서버 응답 오류") 
 
@@ -92,8 +94,9 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Jinja2 template engine
 templates = Jinja2Templates(directory="tem")
 
-# Include the send_email router
+# Include the send_email and save_result routers
 app.include_router(send_email.router)
+app.include_router(save_result.router)
 
 from fastapi import WebSocket
 import json
@@ -164,6 +167,25 @@ async def adhd_short_ws(websocket: WebSocket):
                         "message": "모든 질문이 완료되었습니다."
                     })
                     print("🏁 모든 질문 완료")
+            elif data.get("type") == "ready":
+                client_index = data.get("currentIndex", 0)
+                next_index = client_index + 1
+                print(f"✅ [READY] 클라이언트로부터 다음 질문 요청 수신 → 현재 index: {client_index}, 다음 index: {next_index}")
+
+                if next_index < len(questions):
+                    await websocket.send_json({
+                        "type": "question",
+                        "text": questions[next_index]["text"].replace("{name}", "사용자"),
+                        "index": next_index
+                    })
+                    print(f"📤 다음 질문 전송: {questions[next_index]['text']}")
+                else:
+                    await asyncio.sleep(1)
+                    await websocket.send_json({
+                        "type": "end",
+                        "message": "모든 질문이 완료되었습니다."
+                    })
+                    print("🏁 모든 질문 완료")
         except Exception as e:
             print("❌ WebSocket error:", e)
             break
@@ -176,6 +198,7 @@ async def show_result_page(request: Request):
 
 load_dotenv()
 
+# .env의 값을 읽어서 -> /config.js로 JS가 읽을 수 있게 변환해서 제공함
 @app.get("/config.js")
 def get_config_js():
     ws_host = os.getenv("WS_HOST", "localhost:5981")
@@ -191,5 +214,7 @@ def get_config_js():
   STT_WEBSOCKET_PATH: "{stt_path}",
   STT_SHORT_WEBSOCKET_PATH: "{stt_short_path}"
 }};"""
+    # .env -> main.py -> config.js -> 브라우저 -> diagnosis.js는(CONFIG.WS_HOST)로 사용
+
 
     return Response(content=js_content, media_type="application/javascript")

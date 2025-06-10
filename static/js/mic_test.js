@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   button.style.transition = "opacity 1s";
 
   // const backendUrl = "http://192.168.3.19:10081/synthesize";
-  const backendUrl = "http://localhost:10081/synthesize";
+  const backendUrl = CONFIG.TTS_ENDPOINT;
   const ttsCache = new Map();
 
   async function preloadTTS(text) {
@@ -163,7 +163,7 @@ function visualizeWaveform(stream) {
 
         try {
           console.log("📤 STT 요청 전송 시작");
-          const response = await fetch("http://localhost:5981/stt", {
+          const response = await fetch(`${window.location.origin}/stt`, {
             method: "POST",
             body: formData,
           });
@@ -173,8 +173,8 @@ function visualizeWaveform(stream) {
           console.log("🧪 원본 STT 응답:", json);
 
           let resultText = "[인식 실패]";
-          if (json && json.text && typeof json.text.text === "string" && json.text.text.trim().length > 0) {
-            resultText = json.text.text.trim().replace(/[^\p{L}]/gu, "");
+          if (json && typeof json.text === "string" && json.text.trim().length > 0) {
+            resultText = json.text.trim().replace(/[^\p{L}]/gu, "");
           }
           console.log("📝 STT 텍스트 결과:", resultText);
 

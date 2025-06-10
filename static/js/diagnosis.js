@@ -1,5 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
 
+  // 🆕 보류된 질문 저장용 변수
+  let pendingQuestion = null;
+
   let endSignalReceived = false;
 
   let retryCount = 0;
@@ -47,11 +50,11 @@ document.addEventListener("DOMContentLoaded", () => {
       currentQuestionIndex = qIndex;
 
       if (isQuestionInProgress) {
-        console.warn("🚧 질문 진행 중인데 새 질문 도착 → 무시 (index는 갱신됨)");
+        console.warn("🚧 질문 진행 중인데 새 질문 도착 → 보류");
+        pendingQuestion = data;
         return;
       }
 
-      isQuestionInProgress = true;
       showQuestion(data.text, false, qIndex + 1);
     } else if (data.type === "response") {
       console.log("✅ handleResponse 호출 준비됨!");
@@ -84,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  const socket = new WebSocket(`ws://${location.host}/ws/adhd-short`);
+  const socket = new WebSocket(`${location.origin.replace(/^http/, 'ws')}/ws/adhd-short`);
   socket.onmessage = handleSocketMessage;
 
   let currentQuestionIndex = 0;
@@ -116,9 +119,12 @@ document.addEventListener("DOMContentLoaded", () => {
     isQuestionInProgress = true;
     alreadyScored = false;
     console.log("🔄 alreadyScored 초기화됨");
-    // 사용자 이름 치환
+    // 사용자 이름 치환 (fallback: "사용자님" -> "{username}님"도 지원)
     const username = sessionStorage.getItem("username") || "사용자";
-    const personalizedText = text.replace("{name}", username);
+    let personalizedText = text.replace("{name}", username);
+    if (!text.includes("{name}")) {
+      personalizedText = text.replace("사용자님", `${username}님`);
+    }
     const numberToUse = questionNumber ?? currentQuestionIndex + 1;
     const nativeNumber = convertToKoreanNumber(numberToUse);
     const ttsText = `문제 ${nativeNumber}번. ${personalizedText}`;
@@ -134,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 서버에 TTS 재생용 텍스트 전송 및 오디오 재생
     console.log("📤 TTS 요청 보냄:", ttsText);
-    const backendUrl = "http://localhost:10081/synthesize";
+    const backendUrl = CONFIG.TTS_ENDPOINT;
     const formData = new URLSearchParams();
     formData.append("text", ttsText);
 
@@ -158,6 +164,8 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     window.requestAnimationFrame(() => {
       responseEl.textContent = "🗣️ 응답을 기다리는 중...";
+      responseEl.style.opacity = 1;
+      responseEl.style.color = "black";
     });
     // Update progress bar
     const totalQuestions = questions.length || 20; // Fallback if questions not initialized
@@ -197,9 +205,30 @@ document.addEventListener("DOMContentLoaded", () => {
       console.warn("❌ 현재 질문 번호가 바뀜 → retry 중단");
       return;
     }
+    isQuestionInProgress = true;
+
     window.requestAnimationFrame(() => {
-      responseEl.textContent = text;
-      responseEl.style.opacity = 1;
+      responseEl.style.transition = "opacity 0.5s ease-in-out";
+      responseEl.style.opacity = 0;
+
+      setTimeout(() => {
+        responseEl.textContent = text;
+        responseEl.style.opacity = 1;
+
+        setTimeout(() => {
+          isQuestionInProgress = false;
+          // 🆕 보류된 질문 있으면 처리
+          if (pendingQuestion) {
+            const data = pendingQuestion;
+            pendingQuestion = null;
+            console.log("🔁 보류된 질문 다시 처리:", data);
+            showQuestion(data.text, false, data.index + 1);
+          }
+          if (socket.readyState === WebSocket.OPEN && !endSignalReceived) {
+            socket.send(JSON.stringify({ type: "ready", currentIndex: currentQuestionIndex }));
+          }
+        }, 1000);  // wait for display to complete
+      }, 500);
     });
 
     const scoreMap = {
@@ -247,7 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (checkboxEls[idx]) {
         checkboxEls[idx].checked = true;
         checkboxEls[idx].classList.add("locked");
-        checkboxEls[idx].style.outline = "3px solid red"; // ✅ 시각 디버그 표시
+        checkboxEls[idx].classList.add("highlighted");
         console.log("✅ 체크박스", idx + 1, "강제 체크됨", checkboxEls[idx]);
       } else {
         console.warn("❌ 체크박스 null!", idx, matchScore);
@@ -260,7 +289,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("📌 matchScore 최종값:", matchScore);
     if (matchScore !== null) {
       handleScoring(matchScore);
-      isQuestionInProgress = false;
+      // isQuestionInProgress is now managed by the animation frame block above
       retryCount = 0;  // 성공 시 재시도 카운터 초기화
       // currentQuestionIndex 증가는 서버에서 관리
     } else {
