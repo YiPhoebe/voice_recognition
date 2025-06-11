@@ -132,23 +132,7 @@ async def adhd_short_ws(websocket: WebSocket):
                 client_index = data.get("currentIndex", 0)
                 print("📥 응답 수신:", text, "| 클라이언트 currentIndex:", client_index)
                 print("🔁 응답 타입: response → 질문 인덱스 증가 예정 (currentIndex + 1)")
-
-                next_index = client_index + 1
-
-                if next_index < len(questions):
-                    await websocket.send_json({
-                        "type": "question",
-                        "text": questions[next_index]["text"].replace("{name}", "사용자"),
-                        "index": next_index
-                    })
-                    print(f"📤 다음 질문 전송: {questions[next_index]['text']}")
-                else:
-                    await asyncio.sleep(1)
-                    await websocket.send_json({
-                        "type": "end",
-                        "message": "모든 질문이 완료되었습니다."
-                    })
-                    print("🏁 모든 질문 완료")
+                # Removed next_index calculation and sending next question
             elif data.get("type") == "skip":
                 client_index = data.get("currentIndex", 0)
                 next_index = client_index + 1
@@ -171,7 +155,7 @@ async def adhd_short_ws(websocket: WebSocket):
                     print("🏁 모든 질문 완료")
             elif data.get("type") == "ready":
                 client_index = data.get("currentIndex", 0)
-                next_index = client_index + 1
+                next_index = client_index
                 print(f"✅ [READY] 클라이언트로부터 다음 질문 요청 수신 → 현재 index: {client_index}, 다음 index: {next_index}")
 
                 if next_index < len(questions):

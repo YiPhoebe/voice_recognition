@@ -12,7 +12,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const questionEl = document.getElementById("question");
   const questionNumberEl = document.getElementById("question-number");
-  const responseEl = document.getElementById("countdownText");
+  // responseEl will be dynamically resolved via waitForResponseEl
+  // Utility function to wait for the response element to appear
+  function waitForResponseEl(callback, retries = 10) {
+    const el = document.getElementById("countdownText");
+    if (el) {
+      callback(el);
+    } else if (retries > 0) {
+      setTimeout(() => waitForResponseEl(callback, retries - 1), 100);
+    } else {
+      console.warn("❌ responseEl 끝내 못 찾음");
+      callback(null);
+    }
+  }
   const countdownWrapper = document.getElementById("countdown-wrapper");
 
   const progressBar = document.getElementById("progressBar");
@@ -202,6 +214,16 @@ document.addEventListener("DOMContentLoaded", () => {
         svg.setAttribute("height", "24");
         svg.setAttribute("viewBox", "0 0 40 40");
 
+        // Add background circle before progress ring
+        const bgCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        bgCircle.setAttribute("cx", "20");
+        bgCircle.setAttribute("cy", "20");
+        bgCircle.setAttribute("r", "16");
+        bgCircle.setAttribute("stroke", "#eee");
+        bgCircle.setAttribute("stroke-width", "2");
+        bgCircle.setAttribute("fill", "none");
+        svg.appendChild(bgCircle);
+
         const circle2 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
         circle2.id = "progress-ring";
         circle2.setAttribute("cx", "20");
@@ -210,6 +232,8 @@ document.addEventListener("DOMContentLoaded", () => {
         circle2.setAttribute("stroke", "gray");
         circle2.setAttribute("stroke-width", "2");
         circle2.setAttribute("fill", "none");
+        // Rotate so progress starts from 12 o'clock
+        circle2.setAttribute("transform", "rotate(-90 20 20)");
 
         svg.appendChild(circle2);
 
@@ -261,165 +285,166 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleResponse(text) {
-    const expectedIndex = Number(sessionStorage.getItem("expectedQuestionIndex") || currentQuestionIndex);
-    if (expectedIndex !== currentQuestionIndex) {
-      console.warn("❌ 현재 질문 번호가 바뀜 → retry 중단");
-      return;
-    }
-    isQuestionInProgress = true;
-
-    window.requestAnimationFrame(() => {
-      if (responseEl) {
-        responseEl.style.transition = "opacity 0.5s ease-in-out";
-        responseEl.style.opacity = 0;
-      } else {
-        console.warn("❌ responseEl is null at style transition phase");
+    waitForResponseEl(function(responseEl) {
+      let matchScore = null;
+      const expectedIndex = Number(sessionStorage.getItem("expectedQuestionIndex") || currentQuestionIndex);
+      if (expectedIndex !== currentQuestionIndex) {
+        console.warn("❌ 현재 질문 번호가 바뀜 → retry 중단");
+        return;
       }
+      isQuestionInProgress = true;
 
-      setTimeout(() => {
+      window.requestAnimationFrame(() => {
         if (responseEl) {
-          responseEl.textContent = text;
-          responseEl.style.opacity = 1;
+          responseEl.style.transition = "opacity 0.5s ease-in-out";
+          responseEl.style.opacity = 0;
         } else {
-          console.warn("❌ responseEl is null at text update phase");
+          console.warn("❌ responseEl is null at style transition phase");
         }
 
         setTimeout(() => {
-          isQuestionInProgress = false;
-          // 🆕 보류된 질문 있으면 처리
-          if (pendingQuestion) {
-            const data = pendingQuestion;
-            pendingQuestion = null;
-            console.log("🔁 보류된 질문 다시 처리:", data);
-            showQuestion(data.text, false, data.index + 1);
+          if (responseEl) {
+            responseEl.textContent = text;
+            responseEl.style.opacity = 1;
+          } else {
+            console.warn("❌ responseEl is null at text update phase");
           }
-          if (socket.readyState === WebSocket.OPEN && !endSignalReceived) {
-            socket.send(JSON.stringify({ type: "ready", currentIndex: currentQuestionIndex }));
+
+          setTimeout(() => {
+            isQuestionInProgress = false;
+            // 🆕 보류된 질문 있으면 처리
+            if (pendingQuestion) {
+              const data = pendingQuestion;
+              pendingQuestion = null;
+              console.log("🔁 보류된 질문 다시 처리:", data);
+              showQuestion(data.text, false, data.index + 1);
+            }
+            if (socket.readyState === WebSocket.OPEN && !endSignalReceived) {
+              socket.send(JSON.stringify({ type: "ready", currentIndex: currentQuestionIndex }));
+            }
+          }, 1000);  // wait for display to complete
+        }, 500);
+      });
+
+      const scoreMap = {
+        1: ["전혀 그렇지 않다", "전혀 그렇지 않다.", "전혀 그렇진 않다", "전혀 그렇진 않다.",
+          "그렇지 않다", "그렇지 않다.", "전혀", "않다", "1번", "일번", "1", "일", "아니요", "노"],
+        2: ["약간 그렇다", "2번", "이번", "2", "약간", "조금", "그런 편", "그렇다"],
+        3: ["꽤 그렇다", "꽤", "3번", "삼번", "3", "삼", "보통", "중간"],
+        4: ["아주 많이 그렇다","아주", "많이", "4번", "사번", "4", "사", "매우", "완전 그렇다"]
+      };
+
+      const normalized = text.trim().toLowerCase().replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "").replace(/\s+/g, " ");
+      const cleanedNormalized = normalized.replace(/[.,!?]/g, "").trim();
+      sessionStorage.setItem("latestNormalized", normalized);
+      console.log("🧪 normalized (length " + cleanedNormalized.length + "):", JSON.stringify(cleanedNormalized));
+      console.log(`🔢 현재 질문 번호: ${currentQuestionIndex} (표시: ${currentQuestionIndex + 1}번)`);
+
+      // --- 추가: 이상한 응답 필터링 ---
+      const wordCount = cleanedNormalized.split(" ").length;
+      const tooLong = cleanedNormalized.length > 100;
+      const suspiciousWords = ["세골", "인천", "한옥", "시골", "오늘은", "자막"];
+      const containsGarbage = suspiciousWords.some(w => cleanedNormalized.includes(w));
+
+      if ((wordCount > 15 || tooLong) && containsGarbage) {
+        console.warn("❌ 너무 긴 이상한 응답 감지 → 무효 처리");
+        matchScore = null;
+        if (responseEl) {
+          if (retryCount === 1) {
+            responseEl.textContent = "다시 한번 귀 기울여 듣는 중...";
+          } else if (retryCount === 2) {
+            responseEl.textContent = "마지막으로 귀 기울여 듣는 중...";
           }
-        }, 1000);  // wait for display to complete
-      }, 500);
-    });
-
-    const scoreMap = {
-      1: ["전혀 그렇지 않다", "전혀 그렇지 않다.", "전혀 그렇진 않다", "전혀 그렇진 않다.",
-        "그렇지 않다", "그렇지 않다.", "전혀", "않다", "1번", "일번", "1", "일", "아니요", "노"],
-      2: ["약간 그렇다", "2번", "이번", "2", "약간", "조금", "그런 편", "그렇다"],
-      3: ["꽤 그렇다", "꽤", "3번", "삼번", "3", "삼", "보통", "중간"],
-      4: ["아주 많이 그렇다","아주", "많이", "4번", "사번", "4", "사", "매우", "완전 그렇다"]
-    };
-
-    const normalized = text.trim().toLowerCase().replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "").replace(/\s+/g, " ");
-    const cleanedNormalized = normalized.replace(/[.,!?]/g, "").trim();
-    sessionStorage.setItem("latestNormalized", normalized);
-    console.log("🧪 normalized (length " + cleanedNormalized.length + "):", JSON.stringify(cleanedNormalized));
-    console.log(`🔢 현재 질문 번호: ${currentQuestionIndex} (표시: ${currentQuestionIndex + 1}번)`);
-
-    // --- 추가: 이상한 응답 필터링 ---
-    const wordCount = cleanedNormalized.split(" ").length;
-    const tooLong = cleanedNormalized.length > 100;
-    const suspiciousWords = ["세골", "인천", "한옥", "시골", "오늘은", "자막"];
-    const containsGarbage = suspiciousWords.some(w => cleanedNormalized.includes(w));
-
-    if ((wordCount > 15 || tooLong) && containsGarbage) {
-      console.warn("❌ 너무 긴 이상한 응답 감지 → 무효 처리");
-      matchScore = null;
-      if (responseEl) {
-        if (retryCount === 1) {
-          responseEl.textContent = "다시 한번 귀 기울여 듣는 중...";
-        } else if (retryCount === 2) {
-          responseEl.textContent = "마지막으로 귀 기울여 듣는 중...";
-        }
-        responseEl.style.color = "gray";
-      } else {
-        console.warn("❌ responseEl is null at garbage filter phase");
-      }
-    }
-    // --- 끝 ---
-
-    // 🔎 DEBUG: Compare each keyword to cleanedNormalized text in detail
-    for (const [score, keywords] of Object.entries(scoreMap)) {
-      for (const k of keywords) {
-        const nk = k.trim().toLowerCase().replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "").replace(/\s+/g, " ");
-        if (nk === cleanedNormalized) {
-          console.log(`✅ 매칭됨! [score ${score}]: "${nk}" === "${cleanedNormalized}"`);
+          responseEl.style.color = "gray";
+        } else {
+          console.warn("❌ responseEl is null at garbage filter phase");
         }
       }
-    }
+      // --- 끝 ---
 
-    let matchScore = null;
-
-    // 1차: 정확히 일치하는 경우
-    for (const [score, keywords] of Object.entries(scoreMap)) {
-      for (const keyword of keywords) {
-        const normKeyword = keyword.trim().toLowerCase().replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "").replace(/\s+/g, " ");
-        const normInput = cleanedNormalized;
-        if (normKeyword === cleanedNormalized) {
-          matchScore = parseInt(score);
-          break;
+      // 🔎 DEBUG: Compare each keyword to cleanedNormalized text in detail
+      for (const [score, keywords] of Object.entries(scoreMap)) {
+        for (const k of keywords) {
+          const nk = k.trim().toLowerCase().replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "").replace(/\s+/g, " ");
+          if (nk === cleanedNormalized) {
+            console.log(`✅ 매칭됨! [score ${score}]: "${nk}" === "${cleanedNormalized}"`);
+          }
         }
       }
-      if (matchScore !== null) break;
-    }
 
-    // 2차: "포함" 기준 부분 매칭 (정확 일치 없을 때)
-    if (matchScore === null) {
+      // 1차: 정확히 일치하는 경우
       for (const [score, keywords] of Object.entries(scoreMap)) {
         for (const keyword of keywords) {
-          if (cleanedNormalized.includes(keyword)) {
+          const normKeyword = keyword.trim().toLowerCase().replace(/[\u200B-\u200D\uFEFF\u00A0]/g, "").replace(/\s+/g, " ");
+          const normInput = cleanedNormalized;
+          if (normKeyword === cleanedNormalized) {
             matchScore = parseInt(score);
-            console.log(`🧠 포함 매칭 성공! [score ${score}] → "${cleanedNormalized}" includes "${keyword}"`);
             break;
           }
         }
         if (matchScore !== null) break;
       }
-    }
 
-    if (matchScore !== null) {
-      console.log(`✅ 응답 "${normalized}" → 점수 ${matchScore} 매칭 완료`);
-      const idx = matchScore - 1;
-      if (checkboxEls[idx]) {
-        checkboxEls[idx].checked = true;
-        checkboxEls[idx].classList.add("locked");
-        checkboxEls[idx].classList.add("highlighted");
-        console.log("✅ 체크박스", idx + 1, "강제 체크됨", checkboxEls[idx]);
-      } else {
-        console.warn("❌ 체크박스 null!", idx, matchScore);
-      }
-    } else {
-      if (responseEl) {
-        responseEl.textContent = `😕 매칭 실패: "${normalized}"`;
-        responseEl.style.color = "gray";
-      } else {
-        console.warn("❌ responseEl is null at match fail phase");
-      }
-      console.warn("❌ 일치하는 응답 없음:", normalized);
-    }
-    console.log("📌 matchScore 최종값:", matchScore);
-    // --- PATCH START: Enforce scoring done before next question, handle retry and result display ---
-    if (matchScore !== null) {
-      handleScoring(matchScore);
-      retryCount = 0;
-      alreadyScored = true;
-
-      // 질문 20번까지 끝났으면 결과 버튼 보여주기
-      if (currentQuestionIndex + 1 === 21) {
-        const resultButton = document.getElementById("result-button");
-        if (resultButton) {
-          resultButton.classList.remove("hidden");
-          resultButton.classList.add("fade-text-fixed");
-          resultButton.style.opacity = "1";
+      // 2차: "포함" 기준 부분 매칭 (정확 일치 없을 때)
+      if (matchScore === null) {
+        for (const [score, keywords] of Object.entries(scoreMap)) {
+          for (const keyword of keywords) {
+            if (cleanedNormalized.includes(keyword)) {
+              matchScore = parseInt(score);
+              console.log(`🧠 포함 매칭 성공! [score ${score}] → "${cleanedNormalized}" includes "${keyword}"`);
+              break;
+            }
+          }
+          if (matchScore !== null) break;
         }
-        return;
       }
 
-      // 다음 질문 요청
-      currentQuestionIndex++;
-      socket.send(JSON.stringify({ type: "question", currentIndex: currentQuestionIndex }));
-    } else {
-      // retry 로직은 sendAudioToSTT 내부에서 처리하므로 여기선 생략
-    }
-    // --- PATCH END ---
+      if (matchScore !== null) {
+        console.log(`✅ 응답 "${normalized}" → 점수 ${matchScore} 매칭 완료`);
+        const idx = matchScore - 1;
+        if (checkboxEls[idx]) {
+          checkboxEls[idx].checked = true;
+          checkboxEls[idx].classList.add("locked");
+          checkboxEls[idx].classList.add("highlighted");
+          console.log("✅ 체크박스", idx + 1, "강제 체크됨", checkboxEls[idx]);
+        } else {
+          console.warn("❌ 체크박스 null!", idx, matchScore);
+        }
+      } else {
+        if (responseEl) {
+          responseEl.textContent = `😕 매칭 실패: "${normalized}"`;
+          responseEl.style.color = "gray";
+        } else {
+          console.warn("❌ responseEl is null at match fail phase");
+        }
+        console.warn("❌ 일치하는 응답 없음:", normalized);
+      }
+      console.log("📌 matchScore 최종값:", matchScore);
+      // --- PATCH START: Enforce scoring done before next question, handle retry and result display ---
+      if (matchScore !== null) {
+        handleScoring(matchScore);
+        retryCount = 0;
+        alreadyScored = true;
+
+        // 질문 20번까지 끝났으면 결과 버튼 보여주기
+        if (currentQuestionIndex + 1 === 21) {
+          const resultButton = document.getElementById("result-button");
+          if (resultButton) {
+            resultButton.classList.remove("hidden");
+            resultButton.classList.add("fade-text-fixed");
+            resultButton.style.opacity = "1";
+          }
+          return;
+        }
+
+        // 다음 질문 요청
+        currentQuestionIndex++;
+        socket.send(JSON.stringify({ type: "question", currentIndex: currentQuestionIndex }));
+      } else {
+        // retry 로직은 sendAudioToSTT 내부에서 처리하므로 여기선 생략
+      }
+      // --- PATCH END ---
+    });
   }
 
   // 오디오 제어 함수들 - 클라이언트에서 직접 오디오 제어
@@ -514,25 +539,29 @@ document.addEventListener("DOMContentLoaded", () => {
         // --- PATCH: Retry logic for "(응답 없음)" or "[인식 실패]" ---
         if (cleanText === "(응답 없음)" || cleanText === "[인식 실패]") {
           console.warn("⚠️ 응답 없음 → 재시도 로직 실행");
-        
-          if (responseEl) {
-            if (retryCount === 1) {
-              responseEl.textContent = "다시 한번 귀 기울여 듣는 중...";
-            } else if (retryCount === 2) {
-              responseEl.textContent = "마지막으로 귀 기울여 듣는 중...";
+
+          waitForResponseEl(function(responseEl) {
+            if (responseEl) {
+              if (retryCount === 1) {
+                responseEl.textContent = "다시 한번 귀 기울여 듣는 중...";
+              } else if (retryCount === 2) {
+                responseEl.textContent = "마지막으로 귀 기울여 듣는 중...";
+              }
+              responseEl.style.color = "gray";
             }
-            responseEl.style.color = "gray";
-          }
-        
-          retryCount++;
-          if (retryCount < 3) {
-            replayAudio();  // ✅ 현재 질문 재시도
-          } else {
-            retryCount = 0;
-            alreadyScored = true;
-            socket.send(JSON.stringify({ type: "skip", currentIndex: currentQuestionIndex }));
-            currentQuestionIndex++;
-          }
+
+            retryCount++;
+            if (retryCount < 3) {
+              replayAudio();  // ✅ 현재 질문 재시도
+            } else {
+              retryCount = 0;
+              alreadyScored = true;
+              socket.send(JSON.stringify({ type: "skip", currentIndex: currentQuestionIndex }));
+              currentQuestionIndex++;
+              isQuestionInProgress = false;
+            }
+          });
+
           return;
         }
         // --- END PATCH ---
@@ -553,6 +582,25 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .catch(err => {
         console.error("🔴 STT 오류:", err);
+        waitForResponseEl(function(responseEl) {
+          if (responseEl) {
+            responseEl.textContent = "음성 인식에 실패했어요. 다시 시도합니다...";
+            responseEl.style.color = "gray";
+          } else {
+            console.warn("❌ responseEl is null during STT error fallback");
+          }
+
+          retryCount++;
+          if (retryCount < 3) {
+            replayAudio();
+          } else {
+            retryCount = 0;
+            alreadyScored = true;
+            socket.send(JSON.stringify({ type: "skip", currentIndex: currentQuestionIndex }));
+            currentQuestionIndex++;
+            isQuestionInProgress = false;
+          }
+        });
       });
   }
 
@@ -589,7 +637,7 @@ document.addEventListener("DOMContentLoaded", () => {
       text.textContent = "귀 기울여 듣는 중...";
     }
 
-    const radius = 25;
+    const radius = 16;
     const totalLength = 2 * Math.PI * radius;
     ring.style.strokeDasharray = totalLength;
     ring.style.strokeDashoffset = 0;
