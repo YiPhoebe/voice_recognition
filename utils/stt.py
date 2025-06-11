@@ -3,7 +3,7 @@ from io import BytesIO
 import whisper
 from fastapi import HTTPException
 
-model = whisper.load_model("large", device="cuda:1")
+model = whisper.load_model("base", device="cpu")
 
 def transcribe_audio(audio_bytes: BytesIO) -> dict:
     try:
@@ -15,7 +15,7 @@ def transcribe_audio(audio_bytes: BytesIO) -> dict:
             print(f"[STT 결과] {result}")
             print(f"[no_speech_prob] {no_speech_prob}")
             return {
-                "text": result.get("text", "[인식 실패]"),
+                "text": result.get("text", "[인 식 실패]"),
                 "segments": result.get("segments", []),
                 "language": result.get("language", "unknown"),
                 "no_speech_prob": no_speech_prob
