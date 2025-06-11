@@ -1,4 +1,7 @@
 from fastapi import FastAPI, Request, File, UploadFile
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from utils import stt  # stt.py 모듈 import
 from fastapi.responses import JSONResponse
 import requests
@@ -73,9 +76,14 @@ async def synthesize(request: Request):
 
 from fastapi.responses import FileResponse
 
-@app.get("/")
-def root():
-    return FileResponse("tem/index.html")
+#
+# 정적 파일과 템플릿 설정
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="tem")
+
+@app.get("/", response_class=HTMLResponse)
+async def serve_index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/intro")
 def intro():
@@ -88,12 +96,6 @@ def mic_test():
 @app.get("/diagnosis")
 def diagnosis():
     return FileResponse("tem/diagnosis.html")
-
-from fastapi.staticfiles import StaticFiles
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Jinja2 template engine
-templates = Jinja2Templates(directory="tem")
 
 # Include the send_email and save_result routers
 app.include_router(send_email.router)
