@@ -139,6 +139,8 @@ function visualizeWaveform(stream) {
       let recorder;
       let chunks = [];
 
+      // 실패 횟수 추적용 변수 (startRecording 외부에 선언)
+      let failCount = 0;
       function startRecording(stream) {
         chunks = [];
         recorder = new MediaRecorder(stream);
@@ -217,6 +219,20 @@ function visualizeWaveform(stream) {
             button.classList.add("fade-text-fixed");
             button.style.opacity = "1";
           } else {
+            // 실패 횟수 증가
+            failCount++;
+            // 3회 이상 실패시 강제 버튼 노출
+            if (failCount >= 3) {
+              console.log("🚨 3회 실패 - 강제 버튼 표시");
+              if (retryMessage) {
+                retryMessage.classList.add("hidden");
+                retryMessage.classList.remove("fade-text-fixed");
+              }
+              button.classList.remove("hidden");
+              button.classList.add("fade-text-fixed");
+              button.style.opacity = "1";
+              return;
+            }
             console.log("❗ 정답 아님 - 재녹음 시작");
             if (retryMessage) {
               retryMessage.classList.remove("hidden");

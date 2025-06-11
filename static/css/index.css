@@ -198,3 +198,47 @@ body {
 .button:hover {
   background-color: #466b78;                     /* 호버 시 색 진해짐 */
 }
+
+
+@media (max-width: 480px) {
+  .input-icon input {
+    padding-left: 44px; /* 기존 36px → 넉넉히 확보 */
+  }
+
+  .wrap {
+    max-width: 100%;
+    width: 100%;
+    padding: 20px;
+    margin-top: 0px;
+  }
+
+  .button {
+    width: 100% !important;
+    font-size: 20px !important;
+    padding: 16px !important;
+    margin-top: 48px;
+  }
+
+  .title-main,
+  .title-sub {
+    font-size: 26px;
+  }
+
+  .input-icon input,
+  .input-group input,
+  .input-group select,
+  .input-inline input {
+    font-size: 15px;
+    padding: 12px;
+    height: 42px;
+  }
+
+  .birth-input-group {
+    gap: 10px;
+    margin-left: 0;
+  }
+
+  .input-inline:nth-child(1) input { width: 100px; }
+  .input-inline:nth-child(2) input,
+  .input-inline:nth-child(3) input { width: 60px; }
+}

@@ -3,9 +3,14 @@ document.addEventListener("DOMContentLoaded", () => {
   function safeStartsWith(value, prefix) {
     return typeof value === "string" && value.startsWith(prefix);
   }
+  function generateUUID() {
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11)
+      .replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+      );
+  }
   console.log("✅ JS 연결됨");
   console.log("%c🚨 경고: 이 콘솔은 감성 과다로 터질 수 있음", "color: red; font-weight: bold; font-size: 14px");
-  console.log("%c🧃 당신이 콘솔을 열었다는 건... 이미 평범한 사용자는 아니다.", "color: orange; font-size: 13px");
   console.log("%c🐸 이유정의 감성 뇌파에 접속 중... 잠시만 기다려주세요...", "color: #7f5af0; font-size: 13px");
   console.log("%c💿 시스템 상태: 🍓딸기맛", "color: pink; font-style: italic; font-size: 12px");
   // 🔄 초기화: 새로고침 시 모든 입력값 초기화
@@ -32,6 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const month = document.getElementById("month").value.trim();
     const day = document.getElementById("day").value.trim();
 
+    const userId = generateUUID(); // 고유 ID 생성
+    sessionStorage.setItem("user_id", userId); // 고유 ID 저장
     sessionStorage.setItem("username", name);
 
     if (!email || !name || !gender || !year || !month || !day) {
@@ -39,6 +46,28 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    window.location.href = "/intro";
+    fetch("/save-user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: name,
+        email: email,
+        gender: gender,
+        birth: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`,
+      }),
+    })
+    .then((res) => {
+      if (!res.ok) {
+        return res.json().then(data => {
+          throw new Error(data?.error || "❌ 저장 실패");
+        });
+      }
+      console.log("✅ 사용자 정보 저장 완료");
+      window.location.href = "/intro";
+    })
+    .catch((err) => {
+      console.error("⚠️ 저장 중 에러 발생", err);
+      alert("⚠️ 사용자 정보를 저장하는 데 실패했습니다.");
+    });
   });
 });

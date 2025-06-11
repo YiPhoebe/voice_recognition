@@ -3,7 +3,7 @@ from io import BytesIO
 import whisper
 from fastapi import HTTPException
 
-model = whisper.load_model("large")
+model = whisper.load_model("large", device="cuda:1")
 
 def transcribe_audio(audio_bytes: BytesIO) -> dict:
     try:
@@ -22,4 +22,11 @@ def transcribe_audio(audio_bytes: BytesIO) -> dict:
             }
     except Exception as e:
         print(f"🛑 Whisper 오류 발생: {e}")
-        raise HTTPException(status_code=400, detail=f"STT 처리 실패: {str(e)}")
+        print("📭 Whisper가 실패하여 빈 응답을 반환합니다.")
+        return {
+            "text": "",
+            "segments": [],
+            "language": "unknown",
+            "no_speech_prob": None,
+            "error": str(e)
+        }

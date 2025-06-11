@@ -12,7 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const questionEl = document.getElementById("question");
   const questionNumberEl = document.getElementById("question-number");
-  const responseEl = document.getElementById("responseText");
+  const responseEl = document.getElementById("countdownText");
+  const countdownWrapper = document.getElementById("countdown-wrapper");
 
   const progressBar = document.getElementById("progressBar");
 
@@ -67,20 +68,45 @@ document.addEventListener("DOMContentLoaded", () => {
       if (resultButton) {
         resultButton.classList.remove("hidden");
         resultButton.classList.add("fade-text-fixed");
-        resultButton.style.opacity = "1";
+        const textSpan = document.querySelector(".response-inline-text");
+        if (textSpan) {
+          textSpan.style.opacity = 1;
+          textSpan.style.color = "black";
+        }
 
         resultButton.addEventListener("click", () => {
           try {
-            const currentRecords = JSON.parse(sessionStorage.getItem("scoreRecords") || "[]");
-            const totalScore = currentRecords.reduce((acc, item) => acc + item.score, 0);
-            sessionStorage.setItem("totalScore", totalScore);
+            const scoreRecords = JSON.parse(sessionStorage.getItem("scoreRecords") || "[]");
+            const totalScore = scoreRecords.reduce((acc, item) => acc + item.score, 0);
+            const userId = sessionStorage.getItem("user_id") || "unknown";
+            const userName = sessionStorage.getItem("username") || "사용자";
+            // ✅ 점수와 사용자 정보 저장
+            fetch("/save_result", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                user_id: userId,
+                name: userName,
+                email: "",
+                gender: "",
+                birth: "",
+                scores: scoreRecords
+              }),
+            })
+            .then(() => {
+              sessionStorage.setItem("totalScore", totalScore);
+              location.assign("/result");
+            })
+            .catch(err => {
+              console.error("❌ save_result 전송 실패", err);
+              location.assign("/result");
+            });
             console.log("✅ 진단 완료 시 최종 점수 저장됨:", totalScore);
           } catch (err) {
             console.error("🔥 최종 점수 저장 중 오류 발생:", err);
-          }
-          setTimeout(() => {
+            // 실패시에도 결과 페이지로 이동
             location.assign("/result");
-          }, 100);
+          }
         });
       }
       endSignalReceived = true;
@@ -163,9 +189,44 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error("🔴 TTS fetch 오류:", err);
       });
     window.requestAnimationFrame(() => {
-      responseEl.textContent = "🗣️ 응답을 기다리는 중...";
-      responseEl.style.opacity = 1;
-      responseEl.style.color = "black";
+      const wrapper = document.getElementById("countdown-wrapper");
+      if (wrapper) {
+        const countdownTextDiv = document.createElement("div");
+        countdownTextDiv.id = "countdownText";
+        countdownTextDiv.className = "response-inline-wrapper";
+
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.id = "circle-timer";
+        svg.setAttribute("class", "inline-timer");
+        svg.setAttribute("width", "24");
+        svg.setAttribute("height", "24");
+        svg.setAttribute("viewBox", "0 0 40 40");
+
+        const circle2 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle2.id = "progress-ring";
+        circle2.setAttribute("cx", "20");
+        circle2.setAttribute("cy", "20");
+        circle2.setAttribute("r", "16");
+        circle2.setAttribute("stroke", "gray");
+        circle2.setAttribute("stroke-width", "2");
+        circle2.setAttribute("fill", "none");
+
+        svg.appendChild(circle2);
+
+        const span = document.createElement("span");
+        span.className = "response-inline-text";
+        span.textContent = "응답을 기다리는 중... (4)";
+        span.style.opacity = 1;
+        span.style.color = "black";
+
+        countdownTextDiv.appendChild(svg);
+        countdownTextDiv.appendChild(span);
+
+        wrapper.innerHTML = "";
+        wrapper.appendChild(countdownTextDiv);
+      } else {
+        console.warn("⚠️ countdown-wrapper가 존재하지 않음 → DOM 생성 생략");
+      }
     });
     // Update progress bar
     const totalQuestions = questions.length || 20; // Fallback if questions not initialized
@@ -208,12 +269,20 @@ document.addEventListener("DOMContentLoaded", () => {
     isQuestionInProgress = true;
 
     window.requestAnimationFrame(() => {
-      responseEl.style.transition = "opacity 0.5s ease-in-out";
-      responseEl.style.opacity = 0;
+      if (responseEl) {
+        responseEl.style.transition = "opacity 0.5s ease-in-out";
+        responseEl.style.opacity = 0;
+      } else {
+        console.warn("❌ responseEl is null at style transition phase");
+      }
 
       setTimeout(() => {
-        responseEl.textContent = text;
-        responseEl.style.opacity = 1;
+        if (responseEl) {
+          responseEl.textContent = text;
+          responseEl.style.opacity = 1;
+        } else {
+          console.warn("❌ responseEl is null at text update phase");
+        }
 
         setTimeout(() => {
           isQuestionInProgress = false;
@@ -234,7 +303,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const scoreMap = {
       1: ["전혀 그렇지 않다", "전혀 그렇지 않다.", "전혀 그렇진 않다", "전혀 그렇진 않다.",
         "그렇지 않다", "그렇지 않다.", "전혀", "않다", "1번", "일번", "1", "일", "아니요", "노"],
-      2: ["약간 그렇다", "2번", "이번", "2", "이","약간", "조금", "그런 편", "그렇다"],
+      2: ["약간 그렇다", "2번", "이번", "2", "약간", "조금", "그런 편", "그렇다"],
       3: ["꽤 그렇다", "꽤", "3번", "삼번", "3", "삼", "보통", "중간"],
       4: ["아주 많이 그렇다","아주", "많이", "4번", "사번", "4", "사", "매우", "완전 그렇다"]
     };
@@ -244,6 +313,28 @@ document.addEventListener("DOMContentLoaded", () => {
     sessionStorage.setItem("latestNormalized", normalized);
     console.log("🧪 normalized (length " + cleanedNormalized.length + "):", JSON.stringify(cleanedNormalized));
     console.log(`🔢 현재 질문 번호: ${currentQuestionIndex} (표시: ${currentQuestionIndex + 1}번)`);
+
+    // --- 추가: 이상한 응답 필터링 ---
+    const wordCount = cleanedNormalized.split(" ").length;
+    const tooLong = cleanedNormalized.length > 100;
+    const suspiciousWords = ["세골", "인천", "한옥", "시골", "오늘은", "자막"];
+    const containsGarbage = suspiciousWords.some(w => cleanedNormalized.includes(w));
+
+    if ((wordCount > 15 || tooLong) && containsGarbage) {
+      console.warn("❌ 너무 긴 이상한 응답 감지 → 무효 처리");
+      matchScore = null;
+      if (responseEl) {
+        if (retryCount === 1) {
+          responseEl.textContent = "다시 한번 귀 기울여 듣는 중...";
+        } else if (retryCount === 2) {
+          responseEl.textContent = "마지막으로 귀 기울여 듣는 중...";
+        }
+        responseEl.style.color = "gray";
+      } else {
+        console.warn("❌ responseEl is null at garbage filter phase");
+      }
+    }
+    // --- 끝 ---
 
     // 🔎 DEBUG: Compare each keyword to cleanedNormalized text in detail
     for (const [score, keywords] of Object.entries(scoreMap)) {
@@ -296,32 +387,39 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("❌ 체크박스 null!", idx, matchScore);
       }
     } else {
-      responseEl.textContent = `😕 매칭 실패: "${normalized}"`;
-      responseEl.style.color = "gray";
+      if (responseEl) {
+        responseEl.textContent = `😕 매칭 실패: "${normalized}"`;
+        responseEl.style.color = "gray";
+      } else {
+        console.warn("❌ responseEl is null at match fail phase");
+      }
       console.warn("❌ 일치하는 응답 없음:", normalized);
     }
     console.log("📌 matchScore 최종값:", matchScore);
+    // --- PATCH START: Enforce scoring done before next question, handle retry and result display ---
     if (matchScore !== null) {
       handleScoring(matchScore);
-      // isQuestionInProgress is now managed by the animation frame block above
-      retryCount = 0;  // 성공 시 재시도 카운터 초기화
-      // currentQuestionIndex 증가는 서버에서 관리
-    } else {
-      console.warn("❌ 점수 매칭 실패 → 재시도 진행 중");
-      responseEl.textContent = "😕 인식되지 않았습니다. 다시 한 번 말씀해주세요.";
-      responseEl.style.color = "gray";
-      retryCount++;
-      if (retryCount < 3) {
-        console.warn(`🔁 ${retryCount}회차 재시도`);
-        replayAudio();
-      } else {
-        console.warn("⚠️ 3회 실패 → 다음 질문으로 넘어감");
-        retryCount = 0;
-        isQuestionInProgress = false;
-        alreadyScored = true; // ⛔ prevent repeat skip
-        socket.send(JSON.stringify({ type: "skip", currentIndex: currentQuestionIndex }));
+      retryCount = 0;
+      alreadyScored = true;
+
+      // 질문 20번까지 끝났으면 결과 버튼 보여주기
+      if (currentQuestionIndex + 1 === 21) {
+        const resultButton = document.getElementById("result-button");
+        if (resultButton) {
+          resultButton.classList.remove("hidden");
+          resultButton.classList.add("fade-text-fixed");
+          resultButton.style.opacity = "1";
+        }
+        return;
       }
+
+      // 다음 질문 요청
+      currentQuestionIndex++;
+      socket.send(JSON.stringify({ type: "question", currentIndex: currentQuestionIndex }));
+    } else {
+      // retry 로직은 sendAudioToSTT 내부에서 처리하므로 여기선 생략
     }
+    // --- PATCH END ---
   }
 
   // 오디오 제어 함수들 - 클라이언트에서 직접 오디오 제어
@@ -339,32 +437,17 @@ document.addEventListener("DOMContentLoaded", () => {
       source.connect(audioCtx.destination);
       source.start(0);
     }
-    currentAudio.onended = () => { 
+    currentAudio.onended = () => {
+      startCountdown(4);
       startRecording(); 
       if (endSignalReceived) {
         console.log("🏁 오디오 재생 완료 → end 처리 시작");
-
         const resultButton = document.getElementById("result-button");
         if (resultButton) {
           resultButton.classList.remove("hidden");
           resultButton.classList.add("fade-text-fixed");
           resultButton.style.opacity = "1";
-
-          resultButton.addEventListener("click", () => {
-            try {
-              const currentRecords = JSON.parse(sessionStorage.getItem("scoreRecords") || "[]");
-              const totalScore = currentRecords.reduce((acc, item) => acc + item.score, 0);
-              sessionStorage.setItem("totalScore", totalScore);
-              console.log("✅ 진단 완료 시 최종 점수 저장됨:", totalScore);
-            } catch (err) {
-              console.error("🔥 최종 점수 저장 중 오류 발생:", err);
-            }
-            setTimeout(() => {
-              location.assign("/result");
-            }, 100);
-          });
         }
-
         endSignalReceived = false; // 한번만 실행되도록 초기화
       }
     };
@@ -427,6 +510,33 @@ document.addEventListener("DOMContentLoaded", () => {
         sessionStorage.setItem("diagnosisResponses", JSON.stringify(tempResponses));
 
         let cleanText = typeof text === "string" ? text.trim() : (text.text || "").trim();
+
+        // --- PATCH: Retry logic for "(응답 없음)" or "[인식 실패]" ---
+        if (cleanText === "(응답 없음)" || cleanText === "[인식 실패]") {
+          console.warn("⚠️ 응답 없음 → 재시도 로직 실행");
+        
+          if (responseEl) {
+            if (retryCount === 1) {
+              responseEl.textContent = "다시 한번 귀 기울여 듣는 중...";
+            } else if (retryCount === 2) {
+              responseEl.textContent = "마지막으로 귀 기울여 듣는 중...";
+            }
+            responseEl.style.color = "gray";
+          }
+        
+          retryCount++;
+          if (retryCount < 3) {
+            replayAudio();  // ✅ 현재 질문 재시도
+          } else {
+            retryCount = 0;
+            alreadyScored = true;
+            socket.send(JSON.stringify({ type: "skip", currentIndex: currentQuestionIndex }));
+            currentQuestionIndex++;
+          }
+          return;
+        }
+        // --- END PATCH ---
+
         if (cleanText === "[인식 실패]") {
           console.warn("⚠️ 인식 실패 처리 - 점수 매칭 시도");
         }
@@ -454,6 +564,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (currentAudio) currentAudio.play();
     console.log("▶️ 오디오 이어 재생");
   };
+  // (startCountdown 함수는 아래에서 정의됨)
   window.replayAudio = () => {
     if (questions.length === 0) {
       console.warn("❌ 질문 리스트가 아직 초기화되지 않았습니다.");
@@ -468,6 +579,33 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       console.warn("❌ 다시 재생할 질문을 찾을 수 없음");
     }
+  };
+
+  window.startCountdown = function(seconds = 4) {
+    const ring = document.getElementById("progress-ring");
+    const text = document.querySelector(".response-inline-text");
+
+    if (text) {
+      text.textContent = "귀 기울여 듣는 중...";
+    }
+
+    const radius = 25;
+    const totalLength = 2 * Math.PI * radius;
+    ring.style.strokeDasharray = totalLength;
+    ring.style.strokeDashoffset = 0;
+
+    let remaining = seconds;
+
+    const interval = setInterval(() => {
+      const offset = totalLength * ((seconds - remaining + 1) / seconds);
+      ring.style.strokeDashoffset = offset;
+
+      if (remaining > 0) {
+        remaining--;
+      } else {
+        clearInterval(interval);
+      }
+    }, 1000);
   };
 
   window.skipQuestion = () => {
@@ -506,7 +644,12 @@ document.addEventListener("DOMContentLoaded", () => {
     questions = [];
     // Clear question and response UI
     questionEl.textContent = "";
-    responseEl.textContent = "";
+    if (responseEl) {
+      responseEl.textContent = "";
+      responseEl.style.color = "";
+    } else {
+      console.warn("❌ responseEl is null");
+    }
     checkboxEls.forEach(cb => {
       cb.checked = false;
       cb.classList.remove("locked");

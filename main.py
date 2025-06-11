@@ -28,6 +28,7 @@ from fastapi.templating import Jinja2Templates
 # Add send_email and save_result router imports
 from routers import send_email
 from routers import save_result
+from routers import user
 
 @app.post("/stt")
 async def speech_to_text(file: UploadFile = File(...)):
@@ -97,6 +98,7 @@ templates = Jinja2Templates(directory="tem")
 # Include the send_email and save_result routers
 app.include_router(send_email.router)
 app.include_router(save_result.router)
+app.include_router(user.router)
 
 from fastapi import WebSocket
 import json
