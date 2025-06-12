@@ -1,24 +1,29 @@
 import tempfile
 from io import BytesIO
 import os
-from fastapi import HTTPException
+import logging
+from fastapi import HTTPException, UploadFile
 
 model = None
 if os.getenv("ENV") == "aws":
     import whisper
-    model = whisper.load_model("medium", device="cpu")
+    model = whisper.load_model("small", device="cpu")
 
-def transcribe_audio(audio_bytes: BytesIO) -> dict:
+logging.basicConfig(level=logging.INFO)
+
+def transcribe_audio(upload_file: UploadFile) -> dict:
     if model is None:
         raise HTTPException(status_code=503, detail="Whisper STT는 현재 사용되지 않는 환경입니다.")
     try:
-        with tempfile.NamedTemporaryFile(suffix=".webm", delete=True) as temp_audio:
-            temp_audio.write(audio_bytes)
+        suffix = os.path.splitext(upload_file.filename)[-1] or ".webm"
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=True) as temp_audio:
+            contents = upload_file.file.read()
+            temp_audio.write(contents)
             temp_audio.flush()
             result = model.transcribe(temp_audio.name, language="ko", fp16=False)
             no_speech_prob = result.get("segments", [{}])[0].get("no_speech_prob", None)
-            print(f"[STT 결과] {result}")
-            print(f"[no_speech_prob] {no_speech_prob}")
+            logging.info(f"[STT 결과] {result}")
+            logging.info(f"[no_speech_prob] {no_speech_prob}")
             return {
                 "text": result.get("text", "[인 식 실패]"),
                 "segments": result.get("segments", []),
@@ -26,8 +31,8 @@ def transcribe_audio(audio_bytes: BytesIO) -> dict:
                 "no_speech_prob": no_speech_prob
             }
     except Exception as e:
-        print(f"🛑 Whisper 오류 발생: {e}")
-        print("📭 Whisper가 실패하여 빈 응답을 반환합니다.")
+        logging.error(f"🛑 Whisper 오류 발생: {e}")
+        logging.warning("📭 Whisper가 실패하여 빈 응답을 반환합니다.")
         return {
             "text": "",
             "segments": [],

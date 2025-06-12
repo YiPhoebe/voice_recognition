@@ -69,24 +69,22 @@ async def synthesize(request: Request):
     text = data.get("text", "")
     try:
         env = os.getenv("ENV", "academy")
-        if env == "academy":
+        if env == "aws":
+            # 내부 환경: 직접 gTTS 처리
+            from utils.gtts import synthesize_text
+            output_path = synthesize_text(text)
+            return FileResponse(output_path, media_type="audio/mpeg")
+        elif env == "academy":
+            # 학원 환경: 외부 TTS 서버에 요청
             tts_host = os.getenv("ACADEMY_TTS_ENDPOINT")
-        elif env == "aws":
-            tts_host = os.getenv("AWS_TTS_ENDPOINT")
+            if not tts_host:
+                raise RuntimeError("❌ TTS Endpoint 환경변수가 설정되어 있지 않습니다.")
+            tts_response = requests.post(f"{tts_host}/synthesize", data={"text": text})
+            if tts_response.status_code != 200:
+                raise Exception("TTS 서버 응답 오류")
+            return StreamingResponse(BytesIO(tts_response.content), media_type="audio/mpeg")
         else:
-            raise RuntimeError("❌ ENV 환경변수가 올바르지 않습니다.")
-
-        if not tts_host:
-            raise RuntimeError("❌ TTS Endpoint 환경변수가 설정되어 있지 않습니다.")
-
-        tts_response = requests.post(f"{tts_host}/synthesize", data={"text": text})
-        if tts_response.status_code != 200:
-            raise Exception("TTS 서버 응답 오류")
-
-        return StreamingResponse(
-            BytesIO(tts_response.content),
-            media_type="audio/mpeg"
-        )
+            raise RuntimeError("❌ ENV 값이 잘못 설정됨")
     except Exception as e:
         return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
 
