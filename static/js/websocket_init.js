@@ -22,7 +22,7 @@ const timeout = setTimeout(() => {
 
 serverIPs.forEach((url, idx) => {
     const ws1 = new WebSocket('wss://' + url + '/ws/adhd');
-    const ws2 = new WebSocket('wss://' + url + '/ws/general');
+    const ws2 = new WebSocket('wss://' + url + '/ws/adhd');
     sockets[0].push(ws1);
     sockets[1].push(ws2);
 

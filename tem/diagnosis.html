@@ -59,6 +59,14 @@
   </div>
   <script src="/config.js"></script>
   <script src="/static/js/diagnosis.js"></script>
-  <script src="/static/js/websocket_init.js"></script>
+  <script>
+    const isHome = ["localhost", "127.0.0.1"].includes(location.hostname) ||
+                   (location.hostname.startsWith("192.168.") && location.hostname !== "192.168.3.19");
+    if (isHome) {
+      const script = document.createElement("script");
+      script.src = "/static/js/websocket_init.js";
+      document.body.appendChild(script);
+    }
+  </script>
 </body>
 </html>

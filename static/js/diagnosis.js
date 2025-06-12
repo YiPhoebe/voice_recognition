@@ -47,6 +47,8 @@ document.addEventListener("DOMContentLoaded", () => {
   checkboxEls.forEach(cb => {
     cb.checked = false;
     cb.classList.add("locked");
+    cb.style.pointerEvents = "none";
+    cb.style.opacity = "1";  // optional: ensure visual style is unaffected
   });
 
   // 진단 시작될 때 체크박스 다시 보이도록 (show checkboxes again)
@@ -104,6 +106,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const totalScore = scoreRecords.reduce((acc, item) => acc + item.score, 0);
             const userId = sessionStorage.getItem("user_id") || "unknown";
             const userName = sessionStorage.getItem("username") || "사용자";
+            // 추가: 사용자 이메일/성별/생년 정보 가져오기
+            const userEmail = sessionStorage.getItem("email") || "";
+            const userGender = sessionStorage.getItem("gender") || "";
+            const userBirth = sessionStorage.getItem("birth") || "";
             // ✅ 점수와 사용자 정보 저장
             fetch("/save_result", {
               method: "POST",
@@ -111,9 +117,9 @@ document.addEventListener("DOMContentLoaded", () => {
               body: JSON.stringify({
                 user_id: userId,
                 name: userName,
-                email: "",
-                gender: "",
-                birth: "",
+                email: userEmail,
+                gender: userGender,
+                birth: userBirth,
                 scores: scoreRecords
               }),
             })
