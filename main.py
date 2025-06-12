@@ -229,27 +229,16 @@ async def show_result_page(request: Request):
 
 # .env의 값을 읽어서 -> /config.js로 JS가 읽을 수 있게 변환해서 제공함
 @app.get("/config.js")
-def get_config_js():
-    ENV = os.getenv("ENV", "academy")
+async def get_config_js():
+    stt_host = os.getenv("STT_HOST", "")
+    tts_host = os.getenv("TTS_HOST", "")
+    environment = os.getenv("ENVIRONMENT", "dev")
 
-    if ENV == "academy":
-        ws_host = os.getenv("ACADEMY_WS_HOST", "localhost:5981")
-        tts_endpoint = os.getenv("ACADEMY_TTS_ENDPOINT", "http://localhost:10181/synthesize")
-        stt_host = os.getenv("ACADEMY_STT_HOST", "localhost:5981")
-    elif ENV == "aws":
-        ws_host = os.getenv("AWS_WS_HOST", "localhost:5981")
-        tts_endpoint = os.getenv("AWS_TTS_ENDPOINT", "http://localhost:10181/synthesize")
-    else:
-        raise ValueError("ENV must be set to 'academy' or 'aws'")
-
-    stt_path = os.getenv("STT_GENERAL_PATH", "/ws/general")
-    stt_short_path = os.getenv("STT_SHORT_WEBSOCKET_PATH", "/ws/adhd")
-
-    js_content = f"""const CONFIG = {{
-  WS_HOST: "{ws_host}",
-  TTS_ENDPOINT: "{tts_endpoint}",
-  STT_GENERAL_PATH: "{stt_path}",
-  STT_SHORT_WEBSOCKET_PATH: "{stt_short_path}",
-  STT_HOST: "{stt_host}"
-}};"""
-    return Response(content=js_content, media_type="application/javascript")
+    config_js = f"""
+    const CONFIG = {{
+        STT_HOST: "{stt_host}",
+        TTS_HOST: "{tts_host}",
+        ENVIRONMENT: "{environment}"
+    }};
+    """
+    return Response(content=config_js, media_type="application/javascript")
