@@ -11,6 +11,10 @@ with open("static/questions_list.json", "r", encoding="utf-8") as f:
 @router.websocket("/ws/adhd-short")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    await websocket.send_json({
+        "type": "init",
+        "questions": QUESTIONS
+    })
     print("✅ WebSocket 연결 완료")
 
     question_index = 0

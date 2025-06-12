@@ -27,9 +27,13 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   const emailInput = document.getElementById("email-input");
-  const savedEmail = sessionStorage.getItem("email") || localStorage.getItem("email");
-  if (emailInput && savedEmail) {
+  if (emailInput) {
+    const savedEmail = sessionStorage.getItem("final_email") || "";
     emailInput.value = savedEmail;
+
+    emailInput.addEventListener("input", () => {
+      sessionStorage.setItem("final_email", emailInput.value.trim());
+    });
   }
 
   // 이메일 전송 버튼 (백엔드 연결 필요)
@@ -43,12 +47,18 @@ window.addEventListener("DOMContentLoaded", () => {
 
     const payload = {
       name: sessionStorage.getItem("username") || "",
-      email: email,
+      email: sessionStorage.getItem("final_email") || "",
       gender: sessionStorage.getItem("gender") || "",
       birth: sessionStorage.getItem("birth") || "",
       score: score,
       summary: summary,
-      scores: JSON.parse(sessionStorage.getItem("scoreRecords") || "[]")
+      scores: (() => {
+        let rawScores = JSON.parse(sessionStorage.getItem("scoreRecords") || "[]");
+        if (typeof rawScores[0] === "number") {
+          rawScores = rawScores.map((s, i) => ({ question: i + 1, score: s }));
+        }
+        return rawScores;
+      })()
     };
 
     fetch("/send_email", {

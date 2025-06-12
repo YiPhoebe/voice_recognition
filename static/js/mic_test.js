@@ -20,6 +20,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // const backendUrl = "http://192.168.3.19:10081/synthesize";
   const backendUrl = CONFIG.TTS_ENDPOINT;
+  const wsHost = CONFIG.WS_HOST || 'localhost:11181';
+  const sttPath = CONFIG.STT_GENERAL_PATH || '/ws/general';
+  const socket = new WebSocket(`wss://${wsHost}${sttPath}`);
   const ttsCache = new Map();
 
   async function preloadTTS(text) {
@@ -164,66 +167,45 @@ function visualizeWaveform(stream) {
         const retryMessage = document.getElementById("retry-message");
 
         try {
-          console.log("📤 STT 요청 전송 시작");
-          const response = await fetch(`${window.location.origin}/stt`, {
-            method: "POST",
-            body: formData,
-          });
-          console.log("📥 STT 응답 수신 완료");
+          socket.onmessage = (event) => {
+            console.log("📥 STT 응답 수신 완료");
+            let resultText = "[인식 실패]";
+            if (event.data && typeof event.data === "string") {
+              resultText = event.data.trim().replace(/[^\p{L}]/gu, "");
+            }
+            console.log("📝 STT 텍스트 결과:", resultText);
 
-          const json = await response.json();
-          console.log("🧪 원본 STT 응답:", json);
+            sttResult.textContent = "인식된 답변:";
+            sttResult.classList.remove("hidden");
+            sttResult.classList.add("fade-text-fixed");
 
-          let resultText = "[인식 실패]";
-          if (json && typeof json.text === "string" && json.text.trim().length > 0) {
-            resultText = json.text.trim().replace(/[^\p{L}]/gu, "");
-          }
-          console.log("📝 STT 텍스트 결과:", resultText);
+            setTimeout(() => {
+              sttResult.textContent += " " + resultText;
+            }, 1000);
 
-          sttResult.textContent = "인식된 답변:";
-          sttResult.classList.remove("hidden");
-          sttResult.classList.add("fade-text-fixed");
+            function levenshtein(a, b) {
+              const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+              for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+              for (let j = 0; j <= b.length; j++) dp[0][j] = j;
 
-          setTimeout(() => {
-            sttResult.textContent += " " + resultText;
-          }, 1000);
-
-          function levenshtein(a, b) {
-            const dp = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
-            for (let i = 0; i <= a.length; i++) dp[i][0] = i;
-            for (let j = 0; j <= b.length; j++) dp[0][j] = j;
-
-            for (let i = 1; i <= a.length; i++) {
-              for (let j = 1; j <= b.length; j++) {
-                dp[i][j] = Math.min(
-                  dp[i - 1][j] + 1,
-                  dp[i][j - 1] + 1,
-                  dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
-                );
+              for (let i = 1; i <= a.length; i++) {
+                for (let j = 1; j <= b.length; j++) {
+                  dp[i][j] = Math.min(
+                    dp[i - 1][j] + 1,
+                    dp[i][j - 1] + 1,
+                    dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+                  );
+                }
               }
+              return dp[a.length][b.length];
             }
-            return dp[a.length][b.length];
-          }
 
-          const targetText = "안녕하세요";
-          const distance = levenshtein(resultText, targetText);
-          console.log("🎯 비교 대상:", resultText, "vs", targetText);
-          console.log("🧮 Levenshtein 거리:", distance);
-          if (distance <= 2 || resultText.includes("안녕하세요")) {
-            console.log("✅ 정답 인식됨 - 다음 버튼 표시");
-            if (retryMessage) {
-              retryMessage.classList.add("hidden");
-              retryMessage.classList.remove("fade-text-fixed");
-            }
-            button.classList.remove("hidden");
-            button.classList.add("fade-text-fixed");
-            button.style.opacity = "1";
-          } else {
-            // 실패 횟수 증가
-            failCount++;
-            // 3회 이상 실패시 강제 버튼 노출
-            if (failCount >= 3) {
-              console.log("🚨 3회 실패 - 강제 버튼 표시");
+            const targetText = "안녕하세요";
+            const distance = levenshtein(resultText, targetText);
+            console.log("🎯 비교 대상:", resultText, "vs", targetText);
+            console.log("🧮 Levenshtein 거리:", distance);
+            if (distance <= 2 || resultText.includes("안녕하세요")) {
+              console.log("✅ 정답 인식됨 - 다음 버튼 표시");
               if (retryMessage) {
                 retryMessage.classList.add("hidden");
                 retryMessage.classList.remove("fade-text-fixed");
@@ -231,19 +213,37 @@ function visualizeWaveform(stream) {
               button.classList.remove("hidden");
               button.classList.add("fade-text-fixed");
               button.style.opacity = "1";
-              return;
-            }
-            console.log("❗ 정답 아님 - 재녹음 시작");
-            if (retryMessage) {
-              retryMessage.classList.remove("hidden");
-              retryMessage.classList.add("fade-text-fixed");
+            } else {
+              // 실패 횟수 증가
+              failCount++;
+              // 3회 이상 실패시 강제 버튼 노출
+              if (failCount >= 3) {
+                console.log("🚨 3회 실패 - 강제 버튼 표시");
+                if (retryMessage) {
+                  retryMessage.classList.add("hidden");
+                  retryMessage.classList.remove("fade-text-fixed");
+                }
+                button.classList.remove("hidden");
+                button.classList.add("fade-text-fixed");
+                button.style.opacity = "1";
+                return;
+              }
+              console.log("❗ 정답 아님 - 재녹음 시작");
+              if (retryMessage) {
+                retryMessage.classList.remove("hidden");
+                retryMessage.classList.add("fade-text-fixed");
 
-              await new Promise(resolve => setTimeout(resolve, 2000));
-              waveformContainer.classList.remove("hidden");
-              waveformContainer.classList.add("fade-text-fixed");
+                setTimeout(() => {
+                  waveformContainer.classList.remove("hidden");
+                  waveformContainer.classList.add("fade-text-fixed");
+                }, 2000);
+              }
+              startRecording(stream);
             }
-            startRecording(stream);
-          }
+          };
+
+          socket.send(await blob.arrayBuffer());
+
         } catch (err) {
           console.error("❌ STT 요청 실패:", err);
           sttResult.textContent = "인식된 답변: 오류 발생";
@@ -268,4 +268,6 @@ function visualizeWaveform(stream) {
   button.addEventListener("click", () => {
     window.location.href = "/diagnosis";
   });
+
+  window.addEventListener("beforeunload", () => socket.close());
 });

@@ -1,11 +1,16 @@
 import tempfile
 from io import BytesIO
-import whisper
+import os
 from fastapi import HTTPException
 
-model = whisper.load_model("base", device="cpu")
+model = None
+if os.getenv("ENV") == "aws":
+    import whisper
+    model = whisper.load_model("medium", device="cpu")
 
 def transcribe_audio(audio_bytes: BytesIO) -> dict:
+    if model is None:
+        raise HTTPException(status_code=503, detail="Whisper STT는 현재 사용되지 않는 환경입니다.")
     try:
         with tempfile.NamedTemporaryFile(suffix=".webm", delete=True) as temp_audio:
             temp_audio.write(audio_bytes)

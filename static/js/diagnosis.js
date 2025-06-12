@@ -1,8 +1,77 @@
+// --- Global user info variables ---
+let userEmail = "";
+let userGender = "";
+let userBirth = "";
+
 document.addEventListener("DOMContentLoaded", () => {
+  // --- PATCH: Capture user input into sessionStorage immediately ---
+  const emailEl = document.getElementById("email");
+  const genderEl = document.getElementById("gender");
+  const birthEl = document.getElementById("birth");
+
+  if (emailEl && genderEl && birthEl) {
+    emailEl.addEventListener("input", () => {
+      sessionStorage.setItem("email", emailEl.value.trim());
+    });
+    genderEl.addEventListener("input", () => {
+      sessionStorage.setItem("gender", genderEl.value.trim());
+    });
+    birthEl.addEventListener("input", () => {
+      sessionStorage.setItem("birth", birthEl.value.trim());
+    });
+  }
+  // 진단 시작 함수 예시 (이름이 다를 수 있으니 startDiagnosis로 가정)
+  // 실제로는 이 함수를 기존에 이미 구현한 곳에 아래 코드를 추가해야 함.
+  // 아래는 예시로 window.startDiagnosis가 있다고 가정
+  if (typeof window.startDiagnosis === "function") {
+    const origStartDiagnosis = window.startDiagnosis;
+    window.startDiagnosis = function(...args) {
+      userEmail = document.getElementById("email").value.trim();
+      userGender = document.getElementById("gender").value.trim();
+      userBirth = document.getElementById("birth").value.trim();
+      // Store user info in sessionStorage
+      sessionStorage.setItem("email", userEmail);
+      sessionStorage.setItem("gender", userGender);
+      sessionStorage.setItem("birth", userBirth);
+      console.log("📩 진단 시작 시 사용자 정보:", userEmail, userGender, userBirth);
+      return origStartDiagnosis.apply(this, args);
+    };
+  }
 
   // Global variables for countdown pause/resume
   let countdownInterval = null;
   let countdownRemainingTime = 0;
+
+  // ✅ STT용 WebSocket 연결 추가
+  const sttSocket = new WebSocket(`wss://${CONFIG.WS_HOST}${CONFIG.STT_SHORT_WEBSOCKET_PATH}`);
+
+  sttSocket.onopen = () => {
+    console.log("🧠 STT WebSocket 연결 성공");
+  };
+
+  sttSocket.onmessage = (event) => {
+    let data;
+    try {
+      data = JSON.parse(event.data);
+    } catch (e) {
+      console.warn("⚠️ JSON이 아님 → 일반 텍스트로 처리:", event.data);
+      data = event.data;
+    }
+
+    const text = typeof data === "string" ? data : data.text || "";
+    console.log("🗣️ 받은 STT 결과:", text);
+
+    // STT 텍스트 처리: 자동 응답 적용
+    sessionStorage.setItem("expectedQuestionIndex", currentQuestionIndex);
+    handleResponse(text);
+    if (socket.readyState === WebSocket.OPEN && alreadyScored) {
+      socket.send(JSON.stringify({ type: "response", text, currentIndex: currentQuestionIndex }));
+    }
+  };
+
+  sttSocket.onerror = (e) => {
+    console.error("❌ STT WebSocket 오류:", e);
+  };
 
   // 녹음 일시정지 상태 변수
   let isPaused = false;
@@ -88,7 +157,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const actualText = typeof data.text === "object" && data.text.text ? data.text.text : data.text;
       handleResponse(actualText);
     } else if (data.type === "end") {
+      // --- 서버에서 모든 질문 완료 신호 받음 ---
       console.log("🎉 서버에서 모든 질문 완료 신호 받음");
+      // 사용자 정보 확인 로그
+      const userId = sessionStorage.getItem("user_id") || "unknown";
+      const name = sessionStorage.getItem("username") || "사용자";
+      const email = sessionStorage.getItem("email") || "";
+      const gender = sessionStorage.getItem("gender") || "";
+      const birth = sessionStorage.getItem("birth") || "";
+      console.log("📥 사용자 정보 확인:", userId, name, email, gender, birth);
+      // --- CSV 저장 자동 수행 ---
+      if (typeof sendResultToServer === "function") {
+        sendResultToServer(); // ✅ end 신호 수신 시 자동 저장 보장
+      }
+      // (자동 저장 트리거 제거됨)
       // Show result button immediately on end signal
       const resultButton = document.getElementById("result-button");
       if (resultButton) {
@@ -111,6 +193,15 @@ document.addEventListener("DOMContentLoaded", () => {
             const userGender = sessionStorage.getItem("gender") || "";
             const userBirth = sessionStorage.getItem("birth") || "";
             // ✅ 점수와 사용자 정보 저장
+            console.log("🧪 userId:", userId);
+            console.log("🧪 userName:", userName);
+            console.log("🧪 userEmail:", userEmail);
+            console.log("🧪 userGender:", userGender);
+            console.log("🧪 userBirth:", userBirth);
+            console.log("🧪 scoreRecords:", scoreRecords);
+            // --- PATCH: Get final email input value and send with result ---
+            const finalEmailInput = document.getElementById("final-email");
+            const finalEmail = finalEmailInput ? finalEmailInput.value : "";
             fetch("/save_result", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -120,7 +211,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 email: userEmail,
                 gender: userGender,
                 birth: userBirth,
-                scores: scoreRecords
+                scores: scoreRecords,
+                final_email: finalEmail
               }),
             })
             .then(() => {
@@ -143,11 +235,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  const socket = new WebSocket(`${location.origin.replace(/^http/, 'ws')}/ws/adhd-short`);
+  const socket = new WebSocket(`${location.origin.replace(/^http/, 'ws')}/ws/adhd`);
   socket.onmessage = handleSocketMessage;
 
   let currentQuestionIndex = 0;
   let questions = [];
+
+  // ✅ 페이지 진입 시 자동으로 첫 질문 시작 (WebSocket 연결 및 질문 리스트 초기화 이후)
+  const tryAutoStart = () => {
+    if (questions && questions.length > 0) {
+      console.log("🚀 자동 질문 시작 시도");
+      showQuestion(questions[0].text, false, 1);
+    } else {
+      console.warn("❌ 질문 리스트가 아직 없음. 재시도 예약");
+      setTimeout(tryAutoStart, 300);
+    }
+  };
+  setTimeout(tryAutoStart, 500);
 
   socket.onopen = () => {
     console.log("✅ WebSocket 연결됨");
@@ -174,6 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (typeof text !== "string" && typeof text?.text === "string") text = text.text;
     isQuestionInProgress = true;
     alreadyScored = false;
+    sessionStorage.setItem("expectedQuestionIndex", currentQuestionIndex);
     console.log("🔄 alreadyScored 초기화됨");
     // 사용자 이름 치환 (fallback: "사용자님" -> "{username}님"도 지원)
     const username = sessionStorage.getItem("username") || "사용자";
@@ -278,6 +383,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // index 증가는 응답 처리 후 하도록 보류
     }
   }
+  window.showQuestion = showQuestion;
 
   function handleScoring(score) {
     if (alreadyScored) {
@@ -294,7 +400,7 @@ document.addEventListener("DOMContentLoaded", () => {
     responses[questionId] = { question: questionId, score: score };
     // sessionStorage에 scoreRecords 업데이트
     let existing = JSON.parse(sessionStorage.getItem("scoreRecords") || "[]");
-    existing.push({ question: questionId, score: score });
+    existing.push({ question: questionId.toString(), score: score });
     sessionStorage.setItem("scoreRecords", JSON.stringify(existing));
 
     // 총합
@@ -363,8 +469,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const tooLong = cleanedNormalized.length > 100;
       const suspiciousWords = ["세골", "인천", "한옥", "시골", "오늘은", "자막"];
       const containsGarbage = suspiciousWords.some(w => cleanedNormalized.includes(w));
+      // 🆕 반복된 한 단어가 계속되는 경우 무효 처리
+      const words = cleanedNormalized.split(" ");
+      const uniqueWords = new Set(words.filter(w => w.length > 0));
+      const repetitive = uniqueWords.size <= 2 && words.length >= 20;
 
-      if ((wordCount > 15 || tooLong) && containsGarbage) {
+      if ((wordCount > 15 || tooLong) && (containsGarbage || repetitive)) {
         console.warn("❌ 너무 긴 이상한 응답 감지 → 무효 처리");
         matchScore = null;
         if (responseEl) {
@@ -403,17 +513,22 @@ document.addEventListener("DOMContentLoaded", () => {
         if (matchScore !== null) break;
       }
 
-      // 2차: "포함" 기준 부분 매칭 (정확 일치 없을 때)
+      // 2차: "포함" 기준 부분 매칭 (정확 일치 없을 때) - 개선된 단어 기준 매칭
       if (matchScore === null) {
+        const normalizedWords = cleanedNormalized.split(" ");
+        const strictOnly = ["일", "이", "삼", "사"];  // 너무 짧은 단어는 포함매칭 제외
         for (const [score, keywords] of Object.entries(scoreMap)) {
-          for (const keyword of keywords) {
-            if (cleanedNormalized.includes(keyword)) {
-              matchScore = parseInt(score);
-              console.log(`🧠 포함 매칭 성공! [score ${score}] → "${cleanedNormalized}" includes "${keyword}"`);
-              break;
-            }
+          // --- PATCH: ignore whitespace when checking inclusion ---
+          const matched = scoreMap[score].some(keyword => {
+            const cleanKeyword = keyword.replace(/\s/g, '');
+            const cleanResponse = cleanedNormalized.replace(/\s/g, '');
+            return cleanResponse.includes(cleanKeyword);
+          });
+          if (matched) {
+            matchScore = parseInt(score);
+            console.log(`🧠 공백 무시 포함 매칭 성공! [score ${score}]`);
+            break;
           }
-          if (matchScore !== null) break;
         }
       }
 
@@ -444,7 +559,24 @@ document.addEventListener("DOMContentLoaded", () => {
         retryCount = 0;
         alreadyScored = true;
 
-        // 질문 20번까지 끝났으면 결과 버튼 보여주기
+        currentQuestionIndex++;
+        // ✅ 모든 질문이 끝났는지 확인 후 처리
+        if (currentQuestionIndex >= questions.length) {
+          // 사용자 정보 sessionStorage에서 가져오기
+          const userId = sessionStorage.getItem("user_id") || "unknown";
+          const name = sessionStorage.getItem("username") || "사용자";
+          const email = sessionStorage.getItem("email") || "";
+          const gender = sessionStorage.getItem("gender") || "";
+          const birth = sessionStorage.getItem("birth") || "";
+          console.log("✅ 모든 질문 응답 완료! 자동 저장 시작");
+          console.log("📥 사용자 정보 확인:", userId, name, email, gender, birth);
+          if (typeof sendResultToServer === "function") {
+            sendResultToServer();
+          }
+          return;
+        }
+
+        // 질문 20번까지 끝났으면 결과 버튼 보여주기 (안전장치)
         if (currentQuestionIndex + 1 === 21) {
           const resultButton = document.getElementById("result-button");
           if (resultButton) {
@@ -452,12 +584,16 @@ document.addEventListener("DOMContentLoaded", () => {
             resultButton.classList.add("fade-text-fixed");
             resultButton.style.opacity = "1";
           }
-          return;
+          // no return here
         }
 
         // 다음 질문 요청
-        currentQuestionIndex++;
-        socket.send(JSON.stringify({ type: "question", currentIndex: currentQuestionIndex }));
+        if (socket.readyState === WebSocket.OPEN && !endSignalReceived) {
+          socket.send(JSON.stringify({ type: "question", currentIndex: currentQuestionIndex }));
+          console.log("📤 다음 질문 요청 보냄:", currentQuestionIndex);
+        } else {
+          console.warn("⚠️ WebSocket 닫힘 or endSignalReceived=true → 질문 전송 생략됨");
+        }
       } else {
         // retry 로직은 sendAudioToSTT 내부에서 처리하므로 여기선 생략
       }
@@ -518,7 +654,14 @@ document.addEventListener("DOMContentLoaded", () => {
           console.log("🛑 녹음 종료됨");
           const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
           console.log("📦 녹음된 Blob 생성 완료:", audioBlob);
-          sendAudioToSTT(audioBlob);
+          // STT WebSocket이 연결되어 있다면 binary 전송
+          if (sttSocket && sttSocket.readyState === WebSocket.OPEN) {
+            sttSocket.send(audioBlob);
+            console.log("📡 STT WebSocket으로 음성 전송됨");
+          } else {
+            console.warn("❗ STT WebSocket 연결되지 않아 /stt로 fallback");
+            sendAudioToSTT(audioBlob);
+          }
         } else {
           console.log("⏸️ 일시정지 상태에서 onstop 발생 → STT 요청 생략");
         }
@@ -675,6 +818,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const expectedIndex = currentQuestionIndex;
     const q = questions[expectedIndex];
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      currentAudio = null;
+    }
     if (q && typeof q.text === "string") {
       showQuestion(q.text, false, expectedIndex + 1);
       console.log("🔁 오디오 다시 재생 (현재 질문 기준)");
@@ -801,8 +949,45 @@ document.addEventListener("DOMContentLoaded", () => {
     if (resultBtn) resultBtn.classList.add("hidden");
 
     // 질문 UI 갱신
-    showQuestion(0); // force start from first
+    if (questions.length > 0) {
+      showQuestion(questions[0].text, false, 1);
+    } else {
+      console.warn("❌ 질문 리스트가 초기화되지 않았습니다.");
+    }
 
     console.log("🔄 진단이 처음부터 재시작되었습니다.");
   };
 });
+  // --- PATCH: sendResultToServer에서 자동 이동 제거 ---
+  window.sendResultToServer = function() {
+    const userId = sessionStorage.getItem("user_id") || "unknown";
+    const userName = sessionStorage.getItem("username") || "사용자";
+    const scores = JSON.parse(sessionStorage.getItem("scoreRecords") || "[]");
+    // Retrieve userEmail, userGender, userBirth from sessionStorage
+    const userEmail = sessionStorage.getItem("email") || "";
+    const finalEmail = sessionStorage.getItem("final_email") || "";
+    const userGender = sessionStorage.getItem("gender") || "";
+    const userBirth = sessionStorage.getItem("birth") || "";
+    const data = {
+      user_id: userId,
+      name: userName,
+      email: userEmail,
+      gender: userGender,
+      birth: userBirth,
+      scores: scores,
+      final_email: finalEmail
+    };
+    console.log("📤 서버로 결과 전송:", data);
+    fetch("/save_result", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    })
+    .then(() => {
+      sessionStorage.setItem("totalScore", scores.reduce((acc, item) => acc + item.score, 0));
+      console.log("✅ CSV 저장 완료 (이동은 버튼에서)");
+    })
+    .catch(err => {
+      console.error("❌ save_result 전송 실패", err);
+    });
+  };

@@ -29,7 +29,7 @@ class EmailRequest(BaseModel):
 async def send_email(request: EmailRequest):
     print(f"📧 이메일 전송 요청 받음: 이메일={request.email}, 점수={request.score}, 요약={request.summary}")
     
-    csv_file = "/home/iujeong/fastapi/result_csv/diagnosis_results.csv"
+    csv_file = "/home/iujeong/fastapi/csv/diagnosis_results.csv"
     file_exists = os.path.isfile(csv_file)
 
     score_map = {item.get("question"): item.get("score", "") for item in request.scores}

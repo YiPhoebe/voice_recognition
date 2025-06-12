@@ -1,4 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
+  if (typeof CONFIG === "undefined") {
+    console.error("❌ CONFIG가 로드되지 않았습니다. /config.js가 포함되어 있는지 확인하세요.");
+  }
   // Safe string .startsWith utility to prevent errors
   function safeStartsWith(value, prefix) {
     return typeof value === "string" && value.startsWith(prefix);
@@ -46,6 +49,13 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    const birth = `${year.padStart(2, "0")}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    document.getElementById("birth").value = birth;
+
+    sessionStorage.setItem("email", email);
+    sessionStorage.setItem("gender", gender);
+    sessionStorage.setItem("birth", birth);
+
     fetch("/save-user", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -53,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
         name: name,
         email: email,
         gender: gender,
-        birth: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`,
+        birth: birth,
       }),
     })
     .then((res) => {
@@ -63,6 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
       console.log("✅ 사용자 정보 저장 완료");
+      res.text().then((text) => console.log(`✅ user_data.csv 저장됨 → ${text}`));
       window.location.href = "/intro";
     })
     .catch((err) => {
