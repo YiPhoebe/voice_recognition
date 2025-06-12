@@ -239,7 +239,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const span = document.createElement("span");
         span.className = "response-inline-text";
-        span.textContent = "응답을 기다리는 중... (4)";
+        span.textContent = "응답을 기다리는 중...";
         span.style.opacity = 1;
         span.style.color = "black";
 
@@ -540,17 +540,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (cleanText === "(응답 없음)" || cleanText === "[인식 실패]") {
           console.warn("⚠️ 응답 없음 → 재시도 로직 실행");
 
+          console.log("🔄 STT 결과 없음 → responseEl 업데이트 시도 중");
+          retryCount++;
           waitForResponseEl(function(responseEl) {
             if (responseEl) {
-              if (retryCount === 1) {
-                responseEl.textContent = "다시 한번 귀 기울여 듣는 중...";
-              } else if (retryCount === 2) {
-                responseEl.textContent = "마지막으로 귀 기울여 듣는 중...";
-              }
               responseEl.style.color = "gray";
+            } else {
+              console.warn("❌ responseEl is null in retry UI update block");
             }
 
-            retryCount++;
             if (retryCount < 3) {
               replayAudio();  // ✅ 현재 질문 재시도
             } else {
@@ -634,7 +632,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const text = document.querySelector(".response-inline-text");
 
     if (text) {
-      text.textContent = "귀 기울여 듣는 중...";
+      if (retryCount === 1) {
+        text.textContent = "다시 한번 귀 기울여 듣는 중...";
+      } else if (retryCount === 2) {
+        text.textContent = "마지막으로 귀 기울여 듣는 중...";
+      } else {
+        text.textContent = "귀 기울여 듣는 중...";
+      }
+    }
+
+    if (!ring) {
+      console.warn("⛔ progress-ring가 없어서 countdown 중단됨");
+      return;
     }
 
     const radius = 16;
@@ -692,6 +701,11 @@ document.addEventListener("DOMContentLoaded", () => {
     questions = [];
     // Clear question and response UI
     questionEl.textContent = "";
+    // Clear countdown UI (countdownText and SVG timer)
+    const wrapper = document.getElementById("countdown-wrapper");
+    if (wrapper) {
+      wrapper.innerHTML = "";
+    }
     if (responseEl) {
       responseEl.textContent = "";
       responseEl.style.color = "";
