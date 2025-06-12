@@ -1,5 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
 
+  // Global variables for countdown pause/resume
+  let countdownInterval = null;
+  let countdownRemainingTime = 0;
+
+  // 녹음 일시정지 상태 변수
+  let isPaused = false;
+
   // 🆕 보류된 질문 저장용 변수
   let pendingQuestion = null;
 
@@ -51,6 +58,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let sttText = "";
   let responses = {};
+  let mediaRecorder = null;
+  // --- Recording timeout state ---
+  let recordingTimeout = null;
+  let recordingStartTime = null;
+  let remainingRecordingTime = 4000; // milliseconds
 
   function handleSocketMessage(event) {
     const data = JSON.parse(event.data);
@@ -488,7 +500,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 음성 녹음 및 STT 전송 함수들
   function startRecording() {
     navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder = new MediaRecorder(stream);
       const audioChunks = [];
 
       mediaRecorder.ondataavailable = event => {
@@ -496,18 +508,26 @@ document.addEventListener("DOMContentLoaded", () => {
       };
 
       mediaRecorder.onstop = () => {
-        console.log("🛑 녹음 종료됨");
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-        console.log("📦 녹음된 Blob 생성 완료:", audioBlob);
-        sendAudioToSTT(audioBlob);
+        if (!isPaused) {
+          console.log("🛑 녹음 종료됨");
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          console.log("📦 녹음된 Blob 생성 완료:", audioBlob);
+          sendAudioToSTT(audioBlob);
+        } else {
+          console.log("⏸️ 일시정지 상태에서 onstop 발생 → STT 요청 생략");
+        }
       };
 
+      // --- Interval-based countdown logic ---
+      recordingStartTime = Date.now();
       mediaRecorder.start();
       console.log("🎙️ 녹음 시작됨");
 
-      setTimeout(() => {
-        mediaRecorder.stop();
-      }, 4000);
+      recordingTimeout = setTimeout(() => {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+          mediaRecorder.stop();
+        }
+      }, remainingRecordingTime);
     });
   }
 
@@ -605,10 +625,40 @@ document.addEventListener("DOMContentLoaded", () => {
   window.pauseAudio = () => {
     if (currentAudio) currentAudio.pause();
     console.log("⏸️ 오디오 일시정지");
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.pause();
+      isPaused = true;
+      console.log("⏸️ 녹음 pause됨");
+      // --- Pause countdown and update remaining time ---
+      clearTimeout(recordingTimeout);
+      const elapsed = Date.now() - recordingStartTime;
+      remainingRecordingTime -= elapsed;
+      console.log("⏸️ 녹음 일시정지됨 - 남은 시간:", remainingRecordingTime);
+    }
+    // Pause countdown timer
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      console.log("⏸️ 카운트다운 정지됨");
+    }
   };
   window.resumeAudio = () => {
     if (currentAudio) currentAudio.play();
     console.log("▶️ 오디오 이어 재생");
+    if (mediaRecorder && mediaRecorder.state === "paused") {
+      mediaRecorder.resume();
+      isPaused = false;
+      console.log("▶️ 녹음 resume됨");
+      // --- Resume countdown with remaining time ---
+      recordingStartTime = Date.now();
+      recordingTimeout = setTimeout(() => {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+          mediaRecorder.stop();
+        }
+      }, remainingRecordingTime);
+      console.log("▶️ 녹음 재개됨 - 남은 시간:", remainingRecordingTime);
+    }
+    // Resume countdown timer
+    resumeCountdown();
   };
   // (startCountdown 함수는 아래에서 정의됨)
   window.replayAudio = () => {
@@ -651,16 +701,40 @@ document.addEventListener("DOMContentLoaded", () => {
     ring.style.strokeDasharray = totalLength;
     ring.style.strokeDashoffset = 0;
 
-    let remaining = seconds;
+    countdownRemainingTime = seconds;
+    if (countdownInterval) clearInterval(countdownInterval);
 
-    const interval = setInterval(() => {
-      const offset = totalLength * ((seconds - remaining + 1) / seconds);
+    countdownInterval = setInterval(() => {
+      const offset = totalLength * ((seconds - countdownRemainingTime + 1) / seconds);
       ring.style.strokeDashoffset = offset;
 
-      if (remaining > 0) {
-        remaining--;
+      if (countdownRemainingTime > 0) {
+        countdownRemainingTime--;
       } else {
-        clearInterval(interval);
+        clearInterval(countdownInterval);
+      }
+    }, 1000);
+  };
+
+  window.resumeCountdown = function() {
+    const ring = document.getElementById("progress-ring");
+    if (!ring || countdownRemainingTime <= 0) return;
+
+    const radius = 16;
+    const totalLength = 2 * Math.PI * radius;
+    ring.style.strokeDasharray = totalLength;
+
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    countdownInterval = setInterval(() => {
+      // 4 is the original countdown seconds. Adjust if variable.
+      const offset = totalLength * ((4 - countdownRemainingTime + 1) / 4);
+      ring.style.strokeDashoffset = offset;
+
+      if (countdownRemainingTime > 0) {
+        countdownRemainingTime--;
+      } else {
+        clearInterval(countdownInterval);
       }
     }, 1000);
   };
@@ -687,36 +761,42 @@ document.addEventListener("DOMContentLoaded", () => {
     currentQuestionIndex++;
   };
 
-  // 진단 재시작: 기록 초기화, 체크박스 초기화, 서버에 restart 신호
-  window.restartDiagnosis = () => {
-    console.log("♻️ 다시 시작 버튼 클릭됨");
-    sessionStorage.removeItem("scoreRecords");
-    sessionStorage.removeItem("totalScore");
-    sessionStorage.setItem("scoreRecords", JSON.stringify([]));
-    sessionStorage.setItem("totalScore", "0");
-    sessionStorage.removeItem("diagnosisResponses");
-    sessionStorage.removeItem("latestNormalized");
-    currentQuestionIndex = 0;
-    // Reset global questions list
-    questions = [];
-    // Clear question and response UI
-    questionEl.textContent = "";
-    // Clear countdown UI (countdownText and SVG timer)
-    const wrapper = document.getElementById("countdown-wrapper");
-    if (wrapper) {
-      wrapper.innerHTML = "";
-    }
+  // 진단 재시작: 전체 리셋 (오디오, STT, UI, 진행상태)
+  window.restartDiagnosis = function () {
+    // Safely clear responseEl if exists
+    const responseEl = document.getElementById("response-inline-text");
     if (responseEl) {
       responseEl.textContent = "";
-      responseEl.style.color = "";
-    } else {
-      console.warn("❌ responseEl is null");
     }
-    checkboxEls.forEach(cb => {
-      cb.checked = false;
-      cb.classList.remove("locked");
-      cb.style.display = "inline-block";
-    });
-    socket.send(JSON.stringify({ type: "restart" }));
+
+    // 현재 오디오 멈추기
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      currentAudio = null;
+    }
+
+    // 녹음 멈추기
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop();
+    }
+
+    // 진행 상태 초기화
+    currentQuestionIndex = -1;
+    alreadyScored = [];
+    retryCount = 0;
+
+    // 체크박스 초기화
+    const checkboxes = document.querySelectorAll("input[type='checkbox']");
+    checkboxes.forEach(cb => cb.checked = false);
+
+    // 결과 버튼 숨기기
+    const resultBtn = document.getElementById("result-button");
+    if (resultBtn) resultBtn.classList.add("hidden");
+
+    // 질문 UI 갱신
+    showQuestion(0); // force start from first
+
+    console.log("🔄 진단이 처음부터 재시작되었습니다.");
   };
 });
