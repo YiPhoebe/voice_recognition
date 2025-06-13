@@ -31,7 +31,7 @@ async def save_result(request: Request):
     file_exists = os.path.exists(output_path)
 
     with open(output_path, "a", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, quoting=csv.QUOTE_ALL)
         if not file_exists:
             header = ["data_time", "return_time", "user_id", "name", "email", "gender", "birth"] + [f"q{i+1}" for i in range(20)] + ["총점", "진단결과", "final_email"]
             writer.writerow(header)

@@ -2,6 +2,8 @@
 let userEmail = "";
 let userGender = "";
 let userBirth = "";
+let isDiagnosisEnded = false;
+let isRetryingDueToEmptySTT = false;
 
 document.addEventListener("DOMContentLoaded", () => {
   // --- PATCH: Capture user input into sessionStorage immediately ---
@@ -43,7 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let countdownRemainingTime = 0;
 
   // ✅ STT용 WebSocket 연결 추가
-  const sttSocket = new WebSocket(`wss://${CONFIG.WS_HOST}${CONFIG.STT_SHORT_WEBSOCKET_PATH}`);
+  const websocketPath = CONFIG.ENVIRONMENT === "academy" ? "/ws/adhd" : "/ws/general";
+  const sttSocket = new WebSocket(`wss://${CONFIG.STT_HOST}${websocketPath}`);
 
   sttSocket.onopen = () => {
     console.log("🧠 STT WebSocket 연결 성공");
@@ -157,6 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const actualText = typeof data.text === "object" && data.text.text ? data.text.text : data.text;
       handleResponse(actualText);
     } else if (data.type === "end") {
+      isDiagnosisEnded = true;
       // --- 서버에서 모든 질문 완료 신호 받음 ---
       console.log("🎉 서버에서 모든 질문 완료 신호 받음");
       // 사용자 정보 확인 로그
@@ -235,7 +239,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  const socket = new WebSocket(`${location.origin.replace(/^http/, 'ws')}/ws/adhd`);
+  // 환경 기반 WebSocket URL 생성 로직
+  let websocketUrl;
+  if (CONFIG.ENVIRONMENT === "academy") {
+    websocketUrl = `wss://${window.location.hostname}:${window.location.port}/ws/adhd`;
+  } else if (CONFIG.ENVIRONMENT === "aws") {
+    websocketUrl = `wss://${CONFIG.STT_HOST}/ws/general`;
+  } else {
+    console.error("❌ 알 수 없는 환경: WebSocket 연결 실패");
+  }
+
+  const socket = new WebSocket(websocketUrl);
   socket.onmessage = handleSocketMessage;
 
   let currentQuestionIndex = 0;
@@ -270,6 +284,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showQuestion(text, increment = true, questionNumber = null) {
+    if (window.isAudioPlaying) {
+      console.warn("⛔ 현재 오디오가 아직 재생 중입니다. 중복 재생 방지됨.");
+      return;
+    }
+    window.isAudioPlaying = true;
     if (currentQuestionIndex === 0) {
       console.log("🧼 첫 질문 시작 - 점수 초기화");
       sessionStorage.setItem("scoreRecords", JSON.stringify([]));
@@ -409,6 +428,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function handleResponse(text) {
+    if (isDiagnosisEnded) return;
     waitForResponseEl(function(responseEl) {
       let matchScore = null;
       const expectedIndex = Number(sessionStorage.getItem("expectedQuestionIndex") || currentQuestionIndex);
@@ -436,15 +456,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
           setTimeout(() => {
             isQuestionInProgress = false;
-            // 🆕 보류된 질문 있으면 처리
-            if (pendingQuestion) {
-              const data = pendingQuestion;
-              pendingQuestion = null;
-              console.log("🔁 보류된 질문 다시 처리:", data);
-              showQuestion(data.text, false, data.index + 1);
-            }
-            if (socket.readyState === WebSocket.OPEN && !endSignalReceived) {
-              socket.send(JSON.stringify({ type: "ready", currentIndex: currentQuestionIndex }));
+            if (matchScore !== null) {
+              // 🆕 보류된 질문 있으면 처리
+              if (pendingQuestion) {
+                const data = pendingQuestion;
+                pendingQuestion = null;
+                console.log("🔁 보류된 질문 다시 처리:", data);
+                showQuestion(data.text, false, data.index + 1);
+              }
+              if (socket.readyState === WebSocket.OPEN && !endSignalReceived) {
+                socket.send(JSON.stringify({ type: "ready", currentIndex: currentQuestionIndex }));
+              }
             }
           }, 1000);  // wait for display to complete
         }, 500);
@@ -463,6 +485,28 @@ document.addEventListener("DOMContentLoaded", () => {
       sessionStorage.setItem("latestNormalized", normalized);
       console.log("🧪 normalized (length " + cleanedNormalized.length + "):", JSON.stringify(cleanedNormalized));
       console.log(`🔢 현재 질문 번호: ${currentQuestionIndex} (표시: ${currentQuestionIndex + 1}번)`);
+
+      // --- PATCH: Handle empty STT responses ---
+      if (cleanedNormalized === "") {
+        console.warn("⚠️ STT 결과가 완전히 비어 있음 → 재시도 수행");
+
+        if (!isRetryingDueToEmptySTT && retryCount > 0) {
+          console.warn("🚫 resume 흐름 중이라 재시도 생략");
+          return;
+        }
+
+        retryCount++;
+        if (retryCount < 3) {
+          replayAudio();  // 현재 질문 재진행
+        } else {
+          retryCount = 0;
+          alreadyScored = true;
+          socket.send(JSON.stringify({ type: "skip", currentIndex: currentQuestionIndex }));
+          currentQuestionIndex++;
+          isQuestionInProgress = false;
+        }
+        return;
+      }
 
       // --- 추가: 이상한 응답 필터링 ---
       const wordCount = cleanedNormalized.split(" ").length;
@@ -597,11 +641,27 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         // retry 로직은 sendAudioToSTT 내부에서 처리하므로 여기선 생략
       }
+      // --- PATCH: 추가, 매칭 실패 시 재시도/skip 로직 ---
+      if (matchScore === null) {
+        retryCount++;
+        if (retryCount < 3) {
+          console.warn("🔁 매칭 실패 → 질문 다시 재생 시도 (retryCount=" + retryCount + ")");
+          replayAudio();
+        } else {
+          console.warn("⛔ 매칭 실패 재시도 초과 → 질문 skip");
+          retryCount = 0;
+          alreadyScored = true;
+          socket.send(JSON.stringify({ type: "skip", currentIndex: currentQuestionIndex }));
+          currentQuestionIndex++;
+          isQuestionInProgress = false;
+        }
+      }
       // --- PATCH END ---
     });
   }
 
   // 오디오 제어 함수들 - 클라이언트에서 직접 오디오 제어
+  window.isAudioPlaying = false;
   let currentAudio = null;
 
   window.playAudio = (url) => {
@@ -617,6 +677,7 @@ document.addEventListener("DOMContentLoaded", () => {
       source.start(0);
     }
     currentAudio.onended = () => {
+      window.isAudioPlaying = false;
       startCountdown(4);
       startRecording(); 
       if (endSignalReceived) {
@@ -635,12 +696,14 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("▶️ 오디오 재생 시작:", url);
       })
       .catch((err) => {
+        window.isAudioPlaying = false;
         console.warn("⛔ 오디오 자동 재생 차단됨. 사용자 상호작용 필요:", err);
       });
   };
 
   // 음성 녹음 및 STT 전송 함수들
   function startRecording() {
+    if (isDiagnosisEnded) return;
     navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
       mediaRecorder = new MediaRecorder(stream);
       const audioChunks = [];
@@ -774,6 +837,10 @@ document.addEventListener("DOMContentLoaded", () => {
   window.pauseAudio = () => {
     if (currentAudio) currentAudio.pause();
     console.log("⏸️ 오디오 일시정지");
+    // --- Allow pause during retry ---
+    if (isRetryingDueToEmptySTT) {
+      console.log("⏸️ 재시도 중에도 일시정지 허용됨");
+    }
     if (mediaRecorder && mediaRecorder.state === "recording") {
       mediaRecorder.pause();
       isPaused = true;
@@ -791,14 +858,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
   window.resumeAudio = () => {
-    if (currentAudio) currentAudio.play();
-    console.log("▶️ 오디오 이어 재생");
+    let resumedRecording = false;
+
+    if (currentAudio && currentAudio.currentTime < currentAudio.duration) {
+      currentAudio.play();
+      console.log("▶️ 오디오 이어 재생");
+    } else {
+      console.log("⏭️ 오디오는 이미 끝난 상태 → 재생 생략");
+      startRecording();  // 🔁 오디오가 끝났다면 녹음은 재개해야 함
+    }
     if (mediaRecorder && mediaRecorder.state === "paused") {
       mediaRecorder.resume();
       isPaused = false;
+      resumedRecording = true;
       console.log("▶️ 녹음 resume됨");
       // --- Resume countdown with remaining time ---
       recordingStartTime = Date.now();
+      if (recordingTimeout) clearTimeout(recordingTimeout);
       recordingTimeout = setTimeout(() => {
         if (mediaRecorder && mediaRecorder.state === "recording") {
           mediaRecorder.stop();
@@ -806,11 +882,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }, remainingRecordingTime);
       console.log("▶️ 녹음 재개됨 - 남은 시간:", remainingRecordingTime);
     }
+
+    isRetryingDueToEmptySTT = resumedRecording ? true : false;
     // Resume countdown timer
     resumeCountdown();
   };
   // (startCountdown 함수는 아래에서 정의됨)
   window.replayAudio = () => {
+    isRetryingDueToEmptySTT = true;
     if (questions.length === 0) {
       console.warn("❌ 질문 리스트가 아직 초기화되지 않았습니다.");
       return;
@@ -822,6 +901,7 @@ document.addEventListener("DOMContentLoaded", () => {
       currentAudio.pause();
       currentAudio.currentTime = 0;
       currentAudio = null;
+      window.isAudioPlaying = false;
     }
     if (q && typeof q.text === "string") {
       showQuestion(q.text, false, expectedIndex + 1);
@@ -856,6 +936,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ring.style.strokeDashoffset = 0;
 
     countdownRemainingTime = seconds;
+    countdownRemainingTime--; // PATCH: Decrement immediately for faster ring start
     if (countdownInterval) clearInterval(countdownInterval);
 
     countdownInterval = setInterval(() => {
@@ -901,6 +982,7 @@ document.addEventListener("DOMContentLoaded", () => {
       currentAudio.pause();
       currentAudio.currentTime = 0;
       console.log("⏹️ 오디오 강제 중단됨 (skip)");
+      window.isAudioPlaying = false;
     }
 
     // 2. 질문 상태 초기화
@@ -928,6 +1010,7 @@ document.addEventListener("DOMContentLoaded", () => {
       currentAudio.pause();
       currentAudio.currentTime = 0;
       currentAudio = null;
+      window.isAudioPlaying = false;
     }
 
     // 녹음 멈추기

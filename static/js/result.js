@@ -73,19 +73,5 @@ window.addEventListener("DOMContentLoaded", () => {
     .catch(() => {
       alert("이메일 전송 실패");
     });
-
-    // 이메일 외에 결과 CSV 저장 요청
-    fetch("/save_result", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(data => {
-      console.log("📁 결과 CSV 저장 완료:", data);
-    })
-    .catch(() => {
-      console.warn("⚠️ 결과 CSV 저장 실패");
-    });
   });
 });

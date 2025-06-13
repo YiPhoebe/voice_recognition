@@ -28,24 +28,6 @@ class EmailRequest(BaseModel):
 @router.post("/send_email")
 async def send_email(request: EmailRequest):
     print(f"📧 이메일 전송 요청 받음: 이메일={request.email}, 점수={request.score}, 요약={request.summary}")
-    
-    csv_file = "/home/iujeong/fastapi/csv/diagnosis_results.csv"
-    file_exists = os.path.isfile(csv_file)
-
-    score_map = {item.get("question"): item.get("score", "") for item in request.scores}
-    row = [
-        request.name,
-        request.email,
-        request.gender,
-        request.birth
-    ] + [score_map.get(i, "") for i in range(20)]
-
-    with open(csv_file, mode='a', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file)
-        if not file_exists:
-            header = ["이름", "이메일", "성별", "생년월일"] + [f"문항{i+1}" for i in range(20)]
-            writer.writerow(header)
-        writer.writerow(row)
 
     # 이메일 전송 구성
     msg = EmailMessage()

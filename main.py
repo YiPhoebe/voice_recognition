@@ -227,18 +227,24 @@ async def show_result_page(request: Request):
     return templates.TemplateResponse("result.html", {"request": request})
 
 
-# .env의 값을 읽어서 -> /config.js로 JS가 읽을 수 있게 변환해서 제공함
 @app.get("/config.js")
 async def get_config_js():
-    stt_host = os.getenv("STT_HOST", "")
-    tts_host = os.getenv("TTS_HOST", "")
-    environment = os.getenv("ENVIRONMENT", "dev")
+    env = os.getenv("ENV", "academy")
+    if env == "academy":
+        tts_endpoint = os.getenv("ACADEMY_TTS_ENDPOINT", "")
+        stt_host = os.getenv("ACADEMY_STT_HOST", "")
+    elif env == "aws":
+        tts_endpoint = os.getenv("AWS_TTS_ENDPOINT", "")
+        stt_host = os.getenv("AWS_STT_HOST", "")
+    else:
+        tts_endpoint = ""
+        stt_host = ""
 
     config_js = f"""
     const CONFIG = {{
+        TTS_ENDPOINT: "{tts_endpoint}",
         STT_HOST: "{stt_host}",
-        TTS_HOST: "{tts_host}",
-        ENVIRONMENT: "{environment}"
+        ENVIRONMENT: "{env}"
     }};
     """
     return Response(content=config_js, media_type="application/javascript")

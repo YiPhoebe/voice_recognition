@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // const backendUrl = "http://192.168.3.19:10081/synthesize";
   const backendUrl = CONFIG.TTS_ENDPOINT;
-  const wsHost = CONFIG.WS_HOST || 'localhost:11181';
+  const wsHost = CONFIG.WS_HOST || '192.168.3.19:11181';
   const sttPath = CONFIG.STT_GENERAL_PATH || '/ws/general';
   const socket = new WebSocket(`wss://${wsHost}${sttPath}`);
   const ttsCache = new Map();
