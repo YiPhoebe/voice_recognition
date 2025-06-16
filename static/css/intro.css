@@ -30,13 +30,13 @@ html, body, * {
 /* 안내 화면 전체 컨테이너 스타일 */
 #intro-step {
   /* min-height: 200vh; */ /* 필요시 전체 높이 설정 */
-  /* display: flex; */     /* flex 레이아웃(주석처리) */
+  display: flex;     /* flex 레이아웃(주석처리) */
   flex-direction: column;  /* 세로 방향 정렬 */
-  /* justify-content: center; */ /* 수직 중앙 정렬(주석처리) */
+  justify-content: center; /* 수직 중앙 정렬(주석처리) */
   align-items: center;      /* 수평 중앙 정렬 */
-  /* padding: 2rem; */      /* 전체 패딩(주석처리) */
-  /* box-sizing: border-box; */
-  /* text-align: center; */
+  padding: 2rem;      /* 전체 패딩(주석처리) */
+  box-sizing: border-box;
+  text-align: center;
   width: 100vw;             /* 전체 뷰포트 너비 사용 */
   margin-top: 200px;        /* 상단 여백 */
   /* z-index: 999; */
@@ -69,7 +69,7 @@ html, body, * {
 /* 💬 안내 문구 컨테이너 */
 .guide-container {
   min-height: 200px;              /* 최소 높이 설정 */
-  width: 100%;                    /* 전체 너비 사용 */
+  width: 80%;                    /* 전체 너비 사용 */
   display: flex;                  /* flex 레이아웃 */
   flex-direction: column;         /* 세로 방향 정렬 */
   align-items: center;            /* 수평 중앙 정렬 */
@@ -209,4 +209,40 @@ html, body, * {
 
 .button:hover {
   background-color: #466b78;                     /* 호버 시 색 진해짐 */
+}
+
+@media (max-width: 480px) {
+  #intro-step {
+    margin: 120px auto 0 auto;
+    max-width: 95vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .intro-inner {
+    padding: 0 16px;
+  }
+
+  .intro-icon {
+    width: 50px;
+    height: 50px;
+  }
+
+  .guide-line {
+    font-size: 0.95rem;
+  }
+
+  .button {
+    font-size: 14px;
+    padding: 14px 16px;
+    margin-top: 40px;
+  }
+
+  #click-to-continue,
+  #clickMessage {
+    font-size: 14px;
+    margin-top: 40px;
+  }
 }

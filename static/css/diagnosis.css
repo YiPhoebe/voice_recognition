@@ -217,41 +217,74 @@ html, body, * {
    ✅ STEP 7: 반응형 스타일 (Responsive)
 ============================= */
 @media (max-width: 768px) {
-  .progress-container {
-    width: 90%;                  /* 모바일에서 폭을 더 넓게 */
-    top: 1rem;                   /* 상단 위치 살짝 조정 */
-  }
-
   .question-text {
-    font-size: 1rem;             /* 질문 텍스트 크기 줄임 */
+    font-size: 0.9rem;
+    margin-top: 4rem;
   }
 
   .question-number {
-    font-size: 1.125rem;             /* 번호 텍스트 크기 줄임 */
+    font-size: 1rem;
+    margin-top: 6rem;
   }
 
   .checkbox-group {
-    flex-direction: column;         /* 세로 정렬 */
-    gap: 1.2rem;                    /* 항목 사이 간격 */
-    align-items: flex-start;        /* 왼쪽 정렬 */
-    margin-top: 3rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 1.2rem;
+    flex-wrap: nowrap;
+  }
+
+  .checkbox-group div {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.3rem;
+    margin-bottom: 0;
+  }
+  .checkbox-group input[type="checkbox"] {
+    width: 0.6rem;
+    height: 0.6rem;
   }
 
   .checkbox-group label {
-    font-size: 0.95rem;             /* 작은 화면에 맞게 줄임 */
-    text-align: left;
+    font-size: 0.6rem;
   }
 
-  .checkbox-group input[type="checkbox"] {
-    width: 1rem;
-    height: 1rem;
+  .diagnosis-controls {
+    gap: 1rem;
+    margin-top: 3rem;
   }
 
   .diagnosis-controls button {
-    font-size: 0.75rem;             /* 버튼 글자 작게 */
-    padding: 0.5rem 0.75rem;           /* 버튼 여백도 축소 */
+    font-size: 0.5rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .progress-container {
+    width: 95%;
+    margin: 2rem auto;
+  }
+
+  .result-button-container {
+    margin-top: 3rem;
+  }
+
+  #result-button {
+    font-size: 1rem;
+    padding: 14px 16px;
+  }
+  .response-inline-text {
+    font-size: 0.6rem !important;
+  }
+  .response-inline-wrapper {
+    margin-top: 3rem;
   }
 }
+
 
 /* =============================
    ✅ STEP 8: 결과 버튼 영역
@@ -298,3 +331,97 @@ html, body, * {
 }
 
 
+/* =============================
+   ✅ STEP 9: 반응형 스타일 - PC용 (1025px 이상)
+============================= */
+@media (min-width: 1025px) {
+  .checkbox-group {
+    gap: 5rem; /* PC에서는 넓은 간격 유지 */
+    margin-top: 6.5rem;
+  }
+
+  .checkbox-group label {
+    font-size: 1.2rem;
+  }
+
+  .question-text {
+    font-size: 1.4rem;
+  }
+
+  .diagnosis-controls button {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.8rem;
+  }
+}
+
+/* =============================
+   ✅ STEP 10: 반응형 스타일 - 모바일 소형 (480px 이하)
+============================= */
+@media (max-width: 500px) {
+  .question-text {
+    font-size: 0.9rem;
+    margin-top: 4rem;
+  }
+
+  .question-number {
+    font-size: 1rem;
+    margin-top: 6rem;
+  }
+
+  .checkbox-group {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 1.2rem;
+    flex-wrap: nowrap;
+  }
+
+  .checkbox-group div {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.3rem;
+    margin-bottom: 0;
+  }
+  .checkbox-group input[type="checkbox"] {
+    width: 0.6rem;
+    height: 0.6rem;
+  }
+
+  .checkbox-group label {
+    font-size: 0.6rem;
+  }
+
+  .diagnosis-controls {
+    gap: 1rem;
+    margin-top: 3rem;
+  }
+
+  .diagnosis-controls button {
+    font-size: 0.5rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .progress-container {
+    width: 95%;
+    margin: 2rem auto;
+  }
+
+  .result-button-container {
+    margin-top: 3rem;
+  }
+
+  #result-button {
+    font-size: 1rem;
+    padding: 14px 16px;
+  }
+  .response-inline-text {
+    font-size: 0.6rem !important;
+  }
+  .response-inline-wrapper {
+    margin-top: 3rem;
+  }
+}

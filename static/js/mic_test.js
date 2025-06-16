@@ -1,4 +1,13 @@
 document.addEventListener("DOMContentLoaded", async () => {
+  let micStream = null;
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    console.log("✅ 마이크 권한 사전 승인 완료");
+  } catch (err) {
+    console.error("❌ 마이크 권한 요청 실패:", err);
+    return;
+  }
+
   console.log("✅ mic_test.js 로딩 시작됨");
 
   const icon = document.querySelector(".intro-icon");
@@ -71,8 +80,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     waveformContainer.classList.add("fade-text-fixed");
   }, 2000);
 
-  // TTS 음성은 그룹1 → 그룹2 순차 재생
-  playTTSSequentially([...group1Lines, ...group2Lines]);
 
   // WaveSurfer waveform player setup and audio playback
   waveformContainer.innerHTML = "";  // Clear previous
@@ -115,6 +122,7 @@ function visualizeWaveform(stream) {
 
   // Waveform + TTS (병렬 실행)
   async function playTTSSequentially(lines) {
+    console.log("🔊 TTS 시작");
     for (const line of lines) {
       const audio = ttsCache.get(line.textContent);
       if (!audio) continue;
@@ -132,18 +140,15 @@ function visualizeWaveform(stream) {
   // Run TTS first, then waveform and recording
   (async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // let micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log("✅ 마이크 권한 승인됨");
 
-      // 🟡 TTS 재생 먼저 완료 후 waveform + 녹음 실행
-      await playTTSSequentially([...group1Lines, ...group2Lines]);
-
-      visualizeWaveform(stream);  // TTS 끝난 뒤 파형 그리기 시작
-
+      // Declare variables before use
       let recorder;
       let chunks = [];
-
       // 실패 횟수 추적용 변수 (startRecording 외부에 선언)
       let failCount = 0;
+
       function startRecording(stream) {
         chunks = [];
         recorder = new MediaRecorder(stream);
@@ -153,6 +158,11 @@ function visualizeWaveform(stream) {
         console.log("🎙️ 녹음 시작");
         setTimeout(() => recorder.stop(), 6000);
       }
+
+      // 🟡 TTS 재생 먼저 완료 후 waveform + 녹음 실행
+      await playTTSSequentially([...group1Lines, ...group2Lines]);
+      visualizeWaveform(micStream);  // TTS 끝난 뒤 파형 그리기 시작
+      startRecording(micStream);     // TTS 완료 후 녹음 시작
 
       async function onRecordingStop(stream) {
         console.log("🛑 녹음 종료됨");
@@ -242,6 +252,7 @@ function visualizeWaveform(stream) {
             }
           };
 
+          console.log("🧠 STT 요청 시작됨");
           socket.send(await blob.arrayBuffer());
 
         } catch (err) {
@@ -250,7 +261,6 @@ function visualizeWaveform(stream) {
         }
       }
 
-      startRecording(stream);
 
     } catch (err) {
       console.error("🎙 마이크 접근 실패:", err);

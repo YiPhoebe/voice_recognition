@@ -267,6 +267,31 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   setTimeout(tryAutoStart, 500);
 
+  document.body.addEventListener("click", () => {
+    if (ttsReadyUrl) {
+      const audio = new Audio(ttsReadyUrl);
+      audio.play()
+        .then(() => {
+          console.log("▶️ iOS에서 오디오 재생 성공");
+        })
+        .catch(err => {
+          console.warn("❌ 오디오 재생 실패", err);
+        });
+      ttsReadyUrl = null;
+    }
+  }, { once: true });
+
+  // ✅ 모바일 TTS 활성화를 위한 사용자 탭 이벤트 처리
+  const userInteractionHandler = () => {
+    console.log("📲 첫 사용자 탭 감지됨 - iOS 오디오 정책 우회");
+    const silentAudio = new Audio();
+    silentAudio.play().catch(() => {});  // Trigger autoplay unlock
+    document.body.removeEventListener("touchstart", userInteractionHandler);
+    document.body.removeEventListener("click", userInteractionHandler);
+  };
+  document.body.addEventListener("touchstart", userInteractionHandler);
+  document.body.addEventListener("click", userInteractionHandler);
+
   socket.onopen = () => {
     console.log("✅ WebSocket 연결됨");
     // 사용자 이름을 sessionStorage에서 받아서 서버에 전달
@@ -337,6 +362,8 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("📥 TTS 응답 수신 - blob:", blob);
         const url = URL.createObjectURL(blob);
         console.log("🔗 생성된 오디오 URL:", url);
+        ttsReadyUrl = url;
+        console.log("🎯 오디오 URL 저장됨 (사용자 탭 시 재생 예정):", ttsReadyUrl);
         playAudio(url);
       })
       .catch(err => {
@@ -663,6 +690,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 오디오 제어 함수들 - 클라이언트에서 직접 오디오 제어
   window.isAudioPlaying = false;
   let currentAudio = null;
+  let ttsReadyUrl = null;
 
   window.playAudio = (url) => {
     if (currentAudio) currentAudio.pause();

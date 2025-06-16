@@ -157,4 +157,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 바로 페이지 이동
     window.location.href = "/mic_test";
   });
+
+  // ✅ iOS 크롬에서 TTS 재생을 위한 상호작용 보장
+  document.addEventListener("click", () => {
+    for (const [text, audio] of ttsCache.entries()) {
+      if (audio && audio.paused) {
+        audio.play().catch(err => {
+          console.warn("📛 iOS 크롬: 사용자 클릭 후에도 재생 실패:", text, err);
+        });
+      }
+    }
+  }, { once: true });
 });

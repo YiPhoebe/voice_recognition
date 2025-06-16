@@ -23,21 +23,19 @@ body {
 }
 
 .wrap {
-  width: 100%;                     /* 부모(body)의 전체 너비를 사용 */
-  max-width: 360px;                /* 기본 최대 너비를 360px로 제한 (모바일 기준) */
-  padding: 20px;                   /* 모든 방향에 20px 여백 */
-  display: flex;                   /* Flexbox 레이아웃 적용 */
-  flex-direction: column;         /* 자식 요소들을 위에서 아래 방향으로 정렬 */
-  align-items: stretch;           /* 내부 요소들을 너비 100%로 늘리기 */
-  margin-top: -20px; /* 페이지 전체를 10픽셀 위로 살짝 올림 (반응형 포함) */
+  width: 100%;
+  max-width: 100%;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: 0;
 }
 
-/* ✅ 반응형: 태블릿 이상일 때 여유 있게 */
-@media (min-width: 481px) {
+@media (min-width: 1024px) {
   .wrap {
-    max-width: 480px;              /* 더 넓은 너비로 확장 (태블릿 대응) */
-    padding: 40px;                 /* 여백도 넓게 적용 */
-    margin-top: -30px; /* 유지 */
+    max-width: 480px;
+    margin-top: -30px;
   }
 }
 
@@ -68,8 +66,12 @@ body {
 }
 
 .form-section {
-  margin-bottom: 40px;           /* 아래쪽에 40px 간격을 둠 (다음 항목과 여백) */
-  width: 100%;                   /* 가로 너비를 전체로 설정 */
+  margin-bottom: 40px;
+  padding: 0;
+  width: 100%;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .form-section label {
@@ -105,16 +107,21 @@ body {
 }
 
 .form-row {
-  display: flex;                 /* 수평 정렬을 위한 Flexbox 적용 */
-  gap: 16px;                     /* 자식 요소 간의 가로 간격 */
-  justify-content: space-between; /* 남은 공간을 양쪽에 골고루 배치 */
-  align-items: flex-start;       /* 수직 정렬: 위쪽 기준 정렬 */
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0;
+  max-width: 310px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .input-group {
   flex: 1;                          /* 남은 공간을 균등하게 차지함 */
   display: flex;                    /* 내부 요소 정렬을 위한 flex */
   flex-direction: column;          /* 세로 방향 정렬 (label + input) */
+  width: 100%;
 }
 
 .input-group input,
@@ -127,27 +134,27 @@ body {
   background-color: #f2f2f2;       /* 배경색: 밝은 회색 */
   box-sizing: border-box;          /* 패딩 포함한 크기 계산 */
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 가벼운 그림자 */
+  width: 100%;
 }
 
-.birth-input-group {
-  display: flex;                   /* 년/월/일 수평 정렬 */
-  gap: 16px;                       /* 입력칸 간 간격 */
-  justify-content: center;        /* 가운데 정렬 */
-  margin-bottom: 24px;            /* 하단 여백 */
-  margin-left: 13px;              /* 약간 왼쪽 밀기 (맞춤용) */
-}
-
+/* =============================
+   ✅ 생년월일 입력칸 균형 맞춤
+============================= */
 .input-inline {
-  display: flex;                   /* 내부 요소(입력 + span) 가로 정렬 */
-  align-items: center;            /* 수직 가운데 정렬 */
-  gap: 6px;                        /* 입력칸과 '년/월/일' 간 간격 */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  width: 100px;
 }
 
-.input-inline:nth-child(1) input { width: 90px; }  /* 년도 칸 */
-.input-inline:nth-child(2) input { width: 56px; }  /* 월 칸 */
-.input-inline:nth-child(3) input { width: 56px; }  /* 일 칸 */
+.input-group.input-inline {
+  flex-direction: row;
+}
 
 .input-inline input {
+  width: 100%;
   height: 40px;                   /* 높이 고정 */
   border: none;                   /* 테두리 없음 */
   border-radius: 6px;             /* 약간 둥근 모서리 */
@@ -160,8 +167,9 @@ body {
 .input-inline span {
   font-weight: bold;              /* 굵게 */
   font-size: 14px;                /* 입력칸과 통일된 크기 */
-  color: #3c3c3c;                    /* 진회색 */
-  min-width: 24px;                /* 간격 유지를 위한 최소 너비 */
+  color: #3c3c3c;                 /* 진회색 */
+  min-width: 18px;
+  flex-shrink: 0;
 }
 
 .gender-select {
@@ -202,21 +210,29 @@ body {
 
 @media (max-width: 480px) {
   .input-icon input {
-    padding-left: 44px; /* 기존 36px → 넉넉히 확보 */
+    padding-left: 72px; /* 아이콘 공간 더 넉넉히 확보 (겹침 방지, 텍스트를 더 오른쪽으로) */
+  }
+  .input-icon input[type="email"] {
+    padding-left: 40px;
+  }
+
+  .input-icon img {
+    width: 18px;
+    height: 18px;
   }
 
   .wrap {
     max-width: 100%;
     width: 100%;
-    padding: 20px;
+    padding: 20px 20px 20px 20px;
     margin-top: 0px;
   }
 
   .button {
-    width: 100% !important;
-    font-size: 20px !important;
-    padding: 16px !important;
-    margin-top: 48px;
+    width: 30% !important;
+    font-size: 18px !important;
+    padding: 14px !important;
+    margin-top: 40px;
   }
 
   .title-main,
@@ -228,17 +244,56 @@ body {
   .input-group input,
   .input-group select,
   .input-inline input {
-    font-size: 15px;
-    padding: 12px;
-    height: 42px;
-  }
-
-  .birth-input-group {
-    gap: 10px;
-    margin-left: 0;
+    font-size: 14px;
+    padding: 8px 10px;
+    height: 36px;
   }
 
   .input-inline:nth-child(1) input { width: 100px; }
   .input-inline:nth-child(2) input,
   .input-inline:nth-child(3) input { width: 60px; }
+}
+
+
+.form-row.birth {
+  justify-content: center;
+  gap: 8px;
+}
+@media (max-width: 480px) {
+  .form-row.birth {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .input-inline {
+    width: 100%;
+  }
+}
+
+.input-inline:nth-child(1) input { width: 100px; }
+.input-inline:nth-child(2) input,
+.input-inline:nth-child(3) input { width: 60px; }
+@media (min-width: 481px) {
+  .form-row.birth {
+    gap: 12px; /* 이메일 등과 동일한 간격 */
+    justify-content: space-between;
+  }
+
+  .input-inline {
+    flex-direction: column;
+    flex: 1;
+    width: auto;
+  }
+
+  .input-inline input {
+    width: 100%;
+  }
+}
+@media (min-width: 481px) {
+  .input-inline:nth-child(1) input,
+  .input-inline:nth-child(2) input,
+  .input-inline:nth-child(3) input {
+    width: 73px;
+  }
 }

@@ -43,6 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const userId = generateUUID(); // 고유 ID 생성
     sessionStorage.setItem("user_id", userId); // 고유 ID 저장
     sessionStorage.setItem("username", name);
+    sessionStorage.setItem("fromIndex", "true");
 
     if (!email || !name || !gender || !year || !month || !day) {
       alert("⚠️ 모든 항목을 입력해주세요.");
