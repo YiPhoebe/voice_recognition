@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const micStatus = document.getElementById("mic-status");
   const waveformContainer = document.getElementById("waveform");
   const sttResult = document.getElementById("stt-result");
-  const button = document.getElementById("next-button");
+  const button = document.getElementById("start-btn");
 
   [icon, ...group1Lines, micStatus, waveformContainer, sttResult, button].forEach(el => {
     if (el) {
@@ -24,8 +24,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  button.style.opacity = "0";
-  button.style.transition = "opacity 1s";
+  // button.style.opacity = "0";
+  // button.style.transition = "opacity 1s";
 
   // const backendUrl = "http://192.168.3.19:10081/synthesize";
   const backendUrl = CONFIG.TTS_ENDPOINT;

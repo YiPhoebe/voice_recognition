@@ -1,47 +1,49 @@
-/* SUIT 폰트 Regular(보통) 스타일 등록 */
+/* =============================
+   ✅ 전체 공통 스타일 (폰트 기본값)
+============================= */
+/* Pretendard 폰트 Regular(보통) 스타일 등록 */
 @font-face {
-    font-family: 'SUIT'; /* 사용자 정의 웹폰트 이름 */
-    src: url('/static/fonts/SUIT-Bold.woff2') format('woff2'); /* Regular 스타일 폰트 파일 경로 */
-    font-weight: 400; /* 일반 두께 */
-    font-style: normal; /* 일반 스타일 */
-  }
-  
-/* SUIT 폰트 Bold(굵게) 스타일 등록 */
+  font-family: 'Pretendard'; /* 사용자 정의 웹폰트 이름 */
+  src: url('/static/fonts/Pretendard-Regular.woff2') format('woff2'); /* Regular 스타일 폰트 파일 경로 */
+  font-weight: 400; /* 일반 두께 */
+  font-style: normal; /* 일반 스타일 */
+}
+
+/* Pretendard 폰트 Bold(굵게) 스타일 등록 */
 @font-face {
-  font-family: 'SUIT'; /* 동일한 폰트 이름에 다른 두께 설정 */
-  src: url('/static/fonts/SUIT-Bold.woff2') format('woff2'); /* Bold 스타일 폰트 파일 경로 */
+  font-family: 'Pretendard'; /* 동일한 폰트 이름에 다른 두께 설정 */
+  src: url('/static/fonts/Pretendard-Bold.woff2') format('woff2'); /* Bold 스타일 폰트 파일 경로 */
   font-weight: 600; /* 굵은 두께 */
   font-style: normal;
 }
 
-html, body, * {
-  font-family: 'SUIT', sans-serif !important;
+/* 전체 문서에 Pretendard 폰트 적용 */
+/******************************
+  📌 STEP 2: 안내 화면 스타일 (wrap 밖)
+******************************/
+/* 안내 화면 전체 컨테이너 스타일 */
+#intro-step {
+  /* min-height: 200vh; */ /* 필요시 전체 높이 설정 */
+  display: flex;     /* flex 레이아웃(주석처리) */
+  flex-direction: column;  /* 세로 방향 정렬 */
+  justify-content: center; /* 수직 중앙 정렬(주석처리) */
+  align-items: center;      /* 수평 중앙 정렬 */
+  padding: 2rem;      /* 전체 패딩(주석처리) */
+  box-sizing: border-box;
+  text-align: center;
+  width: 100vw;             /* 전체 뷰포트 너비 사용 */
+  margin-top: 200px;        /* 상단 여백 */
+  /* z-index: 999; */
 }
 
-
-body {
-  background-color: #ffffff;
-  margin: 0;
-  padding: 0;
-  font-family: 'SUIT', sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  color: #3c3c3c;
-}
-
-.guide-container {
-  min-height: 200px;              /* 최소 높이 설정 */
-  width: 100%;                    /* 전체 너비 사용 */
+/* 안내 내부 컨텐츠 래퍼 */
+.intro-inner {
+  flex: 1;                        /* flex 아이템이 공간을 모두 차지 */
   display: flex;                  /* flex 레이아웃 */
   flex-direction: column;         /* 세로 방향 정렬 */
+  /* justify-content: center;        수직 중앙 정렬 */
   align-items: center;            /* 수평 중앙 정렬 */
-  justify-content: center;        /* 수직 중앙 정렬 */
-  text-align: center;             /* 텍스트 중앙 정렬 */
-  gap: 12px;                      /* 각 안내 문장 사이 간격 */
-  padding: 1rem 0;                /* 상하 패딩 */
-  box-sizing: border-box;         /* 패딩 포함 박스 크기 계산 */
+  width: 100%;                    /* 전체 너비 사용 */
 }
 
 /* 🎧 안내 아이콘 스타일 */
@@ -151,18 +153,18 @@ body {
 }
 
 /* ✅ 1. 버튼 간격 & 크기 개선 */
-.next-button {
+.button {
   background-color: #567E92;
   color: white;
   border: none;
   width: fit-content !important;
   padding: 19px 20px;
-  font-weight: 600;
+  font-weight: bold;
   font-size: 24px;
   border-radius: 10px;
   cursor: pointer;
   display: block;
-  margin-top: 30px;
+  margin-top: 80px;
   margin-left: auto;
   margin-right: auto;
   position: relative;  /* 또는 absolute */
@@ -174,14 +176,14 @@ body {
   transition: opacity 1s ease-in-out, visibility 1s ease-in-out, transform 1s ease-in-out;
 }
 
-.next-button.fade-text-fixed {
+.button.fade-text-fixed {
   opacity: 1;
   visibility: visible;
   transform: translateY(0); /* 디폴트는 translateY(10px) 같은 걸로 두고 */
   transition: opacity 1s ease-in-out, visibility 1s ease-in-out, transform 1s ease-in-out;
 }
 
-.next-button:hover {
+.button:hover {
   background-color: #466b78;                     /* 호버 시 색 진해짐 */
 }
 
