@@ -18,13 +18,15 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // 결과 링크 복사 기능
   const copyButton = document.getElementById("copy-button");
-  copyButton.addEventListener("click", () => {
-    navigator.clipboard.writeText(window.location.href)
-      .then(() => {
-        copyButton.textContent = "✅ 복사됨!";
-        setTimeout(() => copyButton.textContent = "결과 링크 복사", 2000);
-      });
-  });
+  if (copyButton) {
+    copyButton.addEventListener("click", () => {
+      navigator.clipboard.writeText(window.location.href)
+        .then(() => {
+          copyButton.textContent = "✅ 복사됨!";
+          setTimeout(() => copyButton.textContent = "결과 링크 복사", 2000);
+        });
+    });
+  }
 
   const emailInput = document.getElementById("email-input");
   if (emailInput) {
@@ -38,40 +40,50 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // 이메일 전송 버튼 (백엔드 연결 필요)
   const emailButton = document.getElementById("email-button");
-  emailButton.addEventListener("click", () => {
-    const email = emailInput.value.trim();
-    if (!email || !email.includes("@")) {
-      alert("유효한 이메일 주소를 입력해주세요.");
-      return;
-    }
+  if (emailButton) {
+    emailButton.addEventListener("click", () => {
+      console.log("📨 이메일 버튼 클릭됨");
 
-    const payload = {
-      name: sessionStorage.getItem("username") || "",
-      email: sessionStorage.getItem("final_email") || "",
-      gender: sessionStorage.getItem("gender") || "",
-      birth: sessionStorage.getItem("birth") || "",
-      score: score,
-      summary: summary,
-      scores: (() => {
-        let rawScores = JSON.parse(sessionStorage.getItem("scoreRecords") || "[]");
-        if (typeof rawScores[0] === "number") {
-          rawScores = rawScores.map((s, i) => ({ question: i + 1, score: s }));
-        }
-        return rawScores;
-      })()
-    };
+      const email = emailInput.value.trim();
+      console.log("📨 입력된 이메일:", email);
 
-    fetch("/send_email", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(data => {
-      alert(data.message || "이메일 전송 완료");
-    })
-    .catch(() => {
-      alert("이메일 전송 실패");
+      if (!email || !email.includes("@")) {
+        alert("유효한 이메일 주소를 입력해주세요.");
+        return;
+      }
+
+      const payload = {
+        name: sessionStorage.getItem("username") || "",
+        email: sessionStorage.getItem("final_email") || "",
+        gender: sessionStorage.getItem("gender") || "",
+        birth: sessionStorage.getItem("birth") || "",
+        score: score,
+        summary: summary,
+        scores: (() => {
+          let rawScores = JSON.parse(sessionStorage.getItem("scoreRecords") || "[]");
+          if (typeof rawScores[0] === "number") {
+            rawScores = rawScores.map((s, i) => ({ question: i + 1, score: s }));
+          }
+          return rawScores;
+        })()
+      };
+
+      console.log("📨 전송할 payload:", payload);
+
+      fetch("/send_email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log("📨 응답:", data);
+        alert(data.message || "이메일 전송 완료");
+      })
+      .catch((err) => {
+        console.error("📨 전송 실패:", err);
+        alert("이메일 전송 실패");
+      });
     });
-  });
+  }
 });

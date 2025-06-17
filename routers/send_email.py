@@ -41,6 +41,7 @@ async def send_email(request: EmailRequest):
             smtp.login(EMAIL_USER, EMAIL_PASS)
             smtp.send_message(msg)
     except Exception as e:
+        print(f"❌ 이메일 전송 실패: {str(e)}")
         return JSONResponse(content={"message": f"이메일 전송 중 오류 발생: {str(e)}"}, status_code=500)
 
     return JSONResponse(content={"message": f"{request.email}로 이메일 전송이 완료되었습니다!"})

@@ -267,30 +267,6 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   setTimeout(tryAutoStart, 500);
 
-  document.body.addEventListener("click", () => {
-    if (ttsReadyUrl) {
-      const audio = new Audio(ttsReadyUrl);
-      audio.play()
-        .then(() => {
-          console.log("▶️ iOS에서 오디오 재생 성공");
-        })
-        .catch(err => {
-          console.warn("❌ 오디오 재생 실패", err);
-        });
-      ttsReadyUrl = null;
-    }
-  }, { once: true });
-
-  // ✅ 모바일 TTS 활성화를 위한 사용자 탭 이벤트 처리
-  const userInteractionHandler = () => {
-    console.log("📲 첫 사용자 탭 감지됨 - iOS 오디오 정책 우회");
-    const silentAudio = new Audio();
-    silentAudio.play().catch(() => {});  // Trigger autoplay unlock
-    document.body.removeEventListener("touchstart", userInteractionHandler);
-    document.body.removeEventListener("click", userInteractionHandler);
-  };
-  document.body.addEventListener("touchstart", userInteractionHandler);
-  document.body.addEventListener("click", userInteractionHandler);
 
   socket.onopen = () => {
     console.log("✅ WebSocket 연결됨");
@@ -484,12 +460,17 @@ document.addEventListener("DOMContentLoaded", () => {
           setTimeout(() => {
             isQuestionInProgress = false;
             if (matchScore !== null) {
-              // 🆕 보류된 질문 있으면 처리
-              if (pendingQuestion) {
-                const data = pendingQuestion;
-                pendingQuestion = null;
-                console.log("🔁 보류된 질문 다시 처리:", data);
-                showQuestion(data.text, false, data.index + 1);
+              // 🆕 보류된 질문 있으면 처리 (진단 종료 상태가 아닐 때만)
+              if (pendingQuestion && !isDiagnosisEnded) {
+                if (pendingQuestion.index <= currentQuestionIndex) {
+                  console.warn("⚠️ pendingQuestion이 이미 지난 질문 → 무시됨:", pendingQuestion.index);
+                  pendingQuestion = null;
+                } else {
+                  const data = pendingQuestion;
+                  pendingQuestion = null;
+                  console.log("🔁 보류된 질문 다시 처리:", data);
+                  showQuestion(data.text, false, data.index + 1);
+                }
               }
               if (socket.readyState === WebSocket.OPEN && !endSignalReceived) {
                 socket.send(JSON.stringify({ type: "ready", currentIndex: currentQuestionIndex }));
