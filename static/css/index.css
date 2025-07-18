@@ -1,8 +1,24 @@
 /* =============================
    ✅ 전체 공통 스타일 (폰트 기본값)
 ============================= */
+/* SUIT 폰트 Regular(보통) 스타일 등록 */
+@font-face {
+  font-family: 'SUIT'; /* 사용자 정의 웹폰트 이름 */
+  src: url('/static/fonts/SUIT-Regular.woff2') format('woff2'); /* Regular 스타일 폰트 파일 경로 */
+  font-weight: 400; /* 일반 두께, 숫자가 낮을수록 얇음 */
+  font-style: normal; /* 일반 스타일, 기울기 없음 */
+}
+
+/* SUIT 폰트 Bold(굵게) 스타일 등록 */
+@font-face {
+font-family: 'SUIT'; /* 동일한 폰트 이름에 다른 두께 설정 */
+src: url('/static/fonts/SUIT-Bold.woff2') format('woff2'); /* Bold 스타일 폰트 파일 경로 */
+font-weight: 700; /* 굵은 두께, 보통보다 두꺼움 */
+font-style: normal; /* 일반 스타일, 기울기 없음 */
+}
+
 html, body, * {
-  font-family: 'Pretendard', sans-serif !important;  /* 전체 폰트를 pretendard로 설정 */
+font-family: 'SUIT', sans-serif !important; /* 기본 폰트로 SUIT 적용, 없으면 산세리프 대체 */
 }
 
 
@@ -10,7 +26,6 @@ html, body, * {
    ✅ wrap 기준: 입력 폼 페이지 스타일
 ============================= */
 body {
-  font-family: 'pretendard', sans-serif;             /* 본문 기본 폰트 */
   background-color: #ffffff;                     /* 전체 배경 흰색 */
   margin: 0;                                     /* 여백 제거 */
   padding: 0;                                    /* 패딩 제거 */
@@ -30,27 +45,11 @@ body {
   flex-direction: column;
   align-items: stretch;
   margin-top: 0;
-}
-
-@media (min-width: 1024px) {
-  .wrap {
-    max-width: 480px;
-    margin-top: -30px;
-  }
-}
-
-@media (min-width: 768px) {
-  .wrap {
-    max-width: 380px;              /* 다시 살짝 좁혀서 너무 넓어지는 것 방지 (디자인 안정성) */
-    padding: 40px;                 /* 여백 유지 */
-    margin-top: -20px; /* 유지 */
-  }
-
-
+  /* outline: 1px solid red; */
 }
 
 .title-main {
-  font-size: 32px;                 /* 기본 타이틀 텍스트 크기 */
+  font-size: 2.5rem;                 /* 기본 타이틀 텍스트 크기 */
   font-weight: bold;              /* 글자를 굵게 */
   margin: 0;                      /* 기본 마진 제거 */
   color: #3c3c3c;
@@ -58,10 +57,10 @@ body {
 }
 
 .title-sub {
-  font-size: 32px;                 /* 서브 타이틀도 동일한 크기 */
+  font-size: 2.5rem;                 /* 서브 타이틀도 동일한 크기 */
   font-weight: bold;              /* 굵게 표시 */
   color: #3c3c3c;
-  margin: 4px 0 32px;             /* 위 4px, 아래 32px 마진 (간격 조정) */
+  margin: 4px 0 60px; /* ✨ 타이틀(sub)과 이메일 입력창 사이 간격을 60px로 늘림 */
   text-align: center;             /* 가운데 정렬 */
 }
 
@@ -69,16 +68,17 @@ body {
   margin-bottom: 40px;
   padding: 0;
   width: 100%;
-  max-width: 300px;
+  max-width: 100%px;
   margin-left: auto;
   margin-right: auto;
 }
 
 .form-section label {
   display: inline-block;         /* 줄바꿈 가능한 인라인 블록 요소로 설정 */
-  font-weight: bold;             /* 굵은 글씨 */
+  font-weight: 700;             /* 굵은 글씨 */
   margin-bottom: 6px;            /* 입력창과 간격 확보 */
   color: #3c3c3c;                   /* 텍스트 색상: 진한 회색 */
+  font-size: 1.25rem; /* ⚙️ 인풋 바깥 라벨 텍스트 (이메일, 이름, 성별 등)의 글자 크기를 20px로 설정 */
 }
 
 .input-icon {
@@ -90,29 +90,29 @@ body {
   top: 50%;                      /* 수직 중앙 기준 위치 */
   left: 12px;                    /* 왼쪽에서 12px 떨어진 위치에 고정 */
   transform: translateY(-50%);   /* 정확한 수직 중앙 정렬 보정 */
-  width: 16px;                   /* 아이콘 너비 */
-  height: 16px;                  /* 아이콘 높이 */
+  width: 20px;                   /* 아이콘 너비 */
+  height: 20px;                  /* 아이콘 높이 */
   opacity: 0.6;                  /* 약간 투명하게 (시각적 부드러움) */
 }
 
 .input-icon input {
   width: 100%;                   /* 입력창을 가로로 꽉 채움 */
-  padding: 10px 12px 10px 36px;  /* 좌측은 아이콘 공간 36px 확보, 상하좌우 패딩 설정 */
+  padding: 10px 12px 10px 40px;  /* 좌측은 아이콘 공간 36px 확보, 상하좌우 패딩 설정 */
   border: none;                  /* 테두리 없음 */
   border-radius: 8px;            /* 모서리를 둥글게 처리 */
   background-color: #f2f2f2;     /* 밝은 회색 배경 */
-  font-size: 14px;               /* 글자 크기 */
+  font-size: 1.25rem;               /* 글자 크기 */
   box-sizing: border-box;        /* 패딩과 border 포함한 크기 계산 */
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 가벼운 그림자 효과 */
 }
 
 .form-row {
   display: flex;
-  gap: 12px;
+  gap: 20px;
   justify-content: space-between;
   align-items: flex-start;
   padding: 0;
-  max-width: 310px;
+  max-width: 100%;
   margin-left: auto;
   margin-right: auto;
 }
@@ -128,7 +128,7 @@ body {
 .input-group select {
   height: 40px;                    /* 입력창 높이 */
   padding: 0 12px;                 /* 좌우 패딩 */
-  font-size: 14px;                 /* 글자 크기 */
+  font-size: 1.25rem;                 /* 글자 크기 */
   border: none;                    /* 테두리 제거 */
   border-radius: 8px;              /* 둥근 모서리 */
   background-color: #f2f2f2;       /* 배경색: 밝은 회색 */
@@ -142,15 +142,17 @@ body {
 ============================= */
 .input-inline {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
+  flex-direction: column;
+  align-items: flex-start;
   flex: 1;
-  width: 100px;
+  min-width: 0;
+  width: 100%;
+  gap: 4px;
 }
 
 .input-group.input-inline {
-  flex-direction: row;
+  flex-direction: row !important;
+  align-items: center; /* 텍스트 수직 정렬 */
 }
 
 .input-inline input {
@@ -160,13 +162,13 @@ body {
   border-radius: 6px;             /* 약간 둥근 모서리 */
   background-color: #f2f2f2;      /* 밝은 회색 배경 */
   padding: 0 12px;                /* 좌우 패딩 */
-  font-size: 14px;                /* 글자 크기 */
+  font-size: 1.125rem;                /* 글자 크기 */
   box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* 더 부드러운 그림자 */
 }
 
 .input-inline span {
   font-weight: bold;              /* 굵게 */
-  font-size: 14px;                /* 입력칸과 통일된 크기 */
+  font-size: 1.25rem; /* ⚙️ 생년월일 입력칸 옆의 "년", "월", "일" 텍스트 크기를 18px로 설정 */
   color: #3c3c3c;                 /* 진회색 */
   min-width: 18px;
   flex-shrink: 0;
@@ -192,11 +194,11 @@ body {
   width: fit-content !important;  /* 내용에 맞게 자동 너비 설정 */
   padding: 19px 20px;             /* 상하/좌우 여백 */
   font-weight: bold;              /* 글자 굵게 */
-  font-size: 24px;                /* 버튼 내 글자 크기 */
+  font-size: 1.875rem;                /* 버튼 내 글자 크기 */
   border-radius: 10px;             /* 둥근 모서리 */
   cursor: pointer;                /* 커서를 손모양으로 변경 */
   display: block;
-  margin-top: 60px;
+  margin-top: 80px;
   margin-left: auto;
   margin-right: auto;
   opacity: 1;
@@ -207,6 +209,21 @@ body {
   background-color: #466b78;                     /* 호버 시 색 진해짐 */
 }
 
+
+@media (min-width: 1024px) {
+  .wrap {
+    max-width: 480px;
+    margin-top: -30px;
+  }
+}
+
+@media (min-width: 768px) {
+  .wrap {
+    max-width: 380px;              /* 다시 살짝 좁혀서 너무 넓어지는 것 방지 (디자인 안정성) */
+    padding: 40px;                 /* 여백 유지 */
+    margin-top: -20px; /* 유지 */
+  }
+}
 
 @media (max-width: 480px) {
   .input-icon input {
@@ -222,78 +239,114 @@ body {
   }
 
   .wrap {
-    max-width: 100%;
-    width: 100%;
+    max-width: 80%;
+    width: 80%;
     padding: 20px 20px 20px 20px;
     margin-top: 0px;
   }
 
   .button {
-    width: 30% !important;
-    font-size: 18px !important;
+    width: 40% !important;
+    font-size: 20px !important;
     padding: 14px !important;
     margin-top: 40px;
   }
 
   .title-main,
   .title-sub {
-    font-size: 26px;
+    font-size: 30px;
   }
 
   .input-icon input,
   .input-group input,
   .input-group select,
   .input-inline input {
-    font-size: 14px;
+    font-size: 1.1rem;
     padding: 8px 10px;
     height: 36px;
-  }
-
-  .input-inline:nth-child(1) input { width: 100px; }
-  .input-inline:nth-child(2) input,
-  .input-inline:nth-child(3) input { width: 60px; }
-}
-
-
-.form-row.birth {
-  justify-content: center;
-  gap: 8px;
-}
-@media (max-width: 480px) {
-  .form-row.birth {
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 8px;
-  }
-
-  .input-inline {
-    width: 100%;
-  }
-}
-
-.input-inline:nth-child(1) input { width: 100px; }
-.input-inline:nth-child(2) input,
-.input-inline:nth-child(3) input { width: 60px; }
-@media (min-width: 481px) {
-  .form-row.birth {
-    gap: 12px; /* 이메일 등과 동일한 간격 */
-    justify-content: space-between;
-  }
-
-  .input-inline {
-    flex-direction: column;
-    flex: 1;
-    width: auto;
   }
 
   .input-inline input {
     width: 100%;
   }
 }
-@media (min-width: 481px) {
-  .input-inline:nth-child(1) input,
-  .input-inline:nth-child(2) input,
-  .input-inline:nth-child(3) input {
-    width: 73px;
+.form-row.birth {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .form-row.birth {
+    padding: 0;
+    margin-left: auto;
+    margin-right: auto;
   }
+
+  .input-inline input {
+    width: 100%;
+  }
+}
+
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .form-row.birth {
+    gap: 8px;
+    justify-content: space-between;
+  }
+
+  .input-inline {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .input-inline input {
+    width: 100%;
+  }
+}
+
+@media (min-width: 481px) {
+  .form-row.birth {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0;
+    margin: 0 auto;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .input-inline {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .input-inline input {
+    width: 100%;
+  }
+}
+.form-row.birth .input-inline:nth-child(1) {
+  flex: 2;
+}
+
+.form-row.birth .input-inline:nth-child(2),
+.form-row.birth .input-inline:nth-child(3) {
+  flex: 1.5;
+}
+
+/* =============================
+   ✅ 생년월일 입력칸 너비 및 간격 개선
+============================= */
+.form-row.birth {
+  column-gap: 20px; /* 간격을 조금 더 넓게 */
+}
+
+.form-row.birth .input-inline input {
+  width: 90%; /* input 너비를 살짝 줄임 */
 }
